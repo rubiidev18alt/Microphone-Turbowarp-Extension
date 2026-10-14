@@ -72,6 +72,7 @@
       return {
         id: 'micRecorder',
         name: CONFIG.extensionName,
+        description: CONFIG.extensionDescription,
         docsURI: 'https://github.com/rubiidev18alt/Microphone-Turbowarp-Extension',
         blockIconURI: CONFIG.blockIconURI,
         menuIconURI: CONFIG.menuIconURI,
