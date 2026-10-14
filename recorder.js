@@ -182,18 +182,16 @@
         this.speechRecognition = recognition;
 
         recognition.onresult = (event) => {
-          let finalized = '';
-          let interim = '';
+          // SpeechRecognition retains earlier finalized results in the result
+          // list. Rebuild the complete transcript in order instead of dropping
+          // prior sentences whenever a new utterance arrives.
+          const transcriptParts = [];
           for (let i = 0; i < event.results.length; i++) {
             const result = event.results[i];
-            const transcript = result[0] ? result[0].transcript : '';
-            if (result.isFinal) finalized += transcript;
-            else interim += transcript;
+            const transcript = result[0] ? result[0].transcript.trim() : '';
+            if (transcript) transcriptParts.push(transcript);
           }
-
-          // Keep final recognized text stable while allowing the reporter and
-          // copyable editor to show the current, provisional words too.
-          this.speechTranscriptText = (finalized + interim).trim();
+          this.speechTranscriptText = transcriptParts.join(' ').replace(/\\s+/g, ' ').trim();
           this.updateTranscriptEditor();
         };
 
