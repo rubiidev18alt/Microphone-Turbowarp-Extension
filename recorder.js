@@ -212,29 +212,33 @@
           storage.AssetType
         );
 
+        const storedPlayer = await runtime.audioEngine.decodeSoundPlayer({
+          data: {buffer: wavBytes.buffer, type: 'audio/wav'},
+          format: 'wav',
+          assetId: asset.assetId,
+          md5: asset.assetId + '.wav'
+        });
+
         const sound = {
           name: 'Microphone recording',
           assetId: asset.assetId,
           dataFormat,
           format: '',
-          rate: player.buffer.sampleRate,
-          sampleCount: player.buffer.length,
+          rate: storedPlayer.buffer.sampleRate,
+          sampleCount: storedPlayer.buffer.length,
           md5: asset.assetId + '.' + dataFormat,
           asset,
-          soundId: player.id
+          soundId: storedPlayer.id
         };
 
         if (typeof target.addSound !== 'function' ||
             !target.sprite.soundBank ||
             typeof target.sprite.soundBank.addSoundPlayer !== 'function') {
-          if (player && typeof player.dispose === 'function') player.dispose();
+          if (storedPlayer && typeof storedPlayer.dispose === 'function') storedPlayer.dispose();
           throw new Error('This TurboWarp version cannot add a sound to the selected sprite.');
         }
-        // WAV output is supported by Scratch-compatible sound assets, avoiding
-        // project sounds that contain a MediaRecorder-only container.
-        sound.dataFormat = 'wav';
-        sound.md5 = asset.assetId + '.wav';
-        target.sprite.soundBank.addSoundPlayer(player);
+        // Register a player decoded from the exact WAV bytes stored in the asset.
+        target.sprite.soundBank.addSoundPlayer(storedPlayer);
         target.addSound(sound);
       } catch (error) {
         this.showError('Could not save the recording as a sprite sound: ' + this.getErrorMessage(error));
