@@ -1,6 +1,22 @@
-# Microphone TurboWarp Extension
+# Microphone Recorder for TurboWarp
 
-A microphone recording extension for TurboWarp.
+Record audio from your microphone, then play back your latest take. A small,
+Scratch-inspired extension with a bright microphone icon and simple recording
+blocks.
+
+![Microphone Recorder extension banner](assets/extension-banner.png)
+
+## Title and description
+
+**Title:** Microphone Recorder
+
+**Description:** Record audio from your microphone and play back your latest take in TurboWarp.
+
+## Visual assets
+
+The `assets/` folder contains the banner, palette/block icon exports, and
+editable SVG sources. The extension embeds its own icon as a data URI so it
+still appears when `recorder.js` is loaded from a direct URL.
 
 ## Use
 
@@ -17,6 +33,8 @@ Most common changes are grouped near the top of `recorder.js` in the
 | Setting | What it changes |
 | --- | --- |
 | `extensionName` | Extension name shown in the palette |
+| `extensionDescription` | Short user-facing description for documentation and listings |
+| `blockIconURI`, `menuIconURI` | Icon drawn on blocks and in the category palette |
 | `extensionColor`, `extensionColorDark`, `extensionColorDarker` | Block colors |
 | `overlayTop`, `overlayZIndex`, `overlayBackground` | Recording indicator position and appearance |
 | `overlayMeterSeconds` | Seconds represented by the visual meter; **not** a recording limit |
