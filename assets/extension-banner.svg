@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="300" viewBox="0 0 960 300">
+  <rect width="960" height="300" fill="#4BBEFF"/>
+  <g fill="#54C7FF">
+    <path d="M0 0H52L352 300H300Z"/>
+    <path d="M190 0H242L542 300H490Z"/>
+    <path d="M380 0H432L732 300H680Z"/>
+    <path d="M570 0H622L922 300H870Z"/>
+    <path d="M760 0H812L960 148V200Z"/>
+  </g>
+  <rect x="34" y="30" width="230" height="230" rx="34" fill="#FFFFFF"/>
+  <g fill="none" stroke="#2990EB" stroke-width="6" stroke-linecap="round">
+    <path d="M85 108 Q52 148 85 188"/>
+    <path d="M213 108 Q246 148 213 188"/>
+    <path d="M101 90 Q55 148 101 206"/>
+    <path d="M197 90 Q243 148 197 206"/>
+  </g>
+  <g fill="#2990EB">
+    <rect x="129" y="75" width="40" height="87" rx="20"/>
+    <circle cx="149" cy="98" r="4" fill="#FFFFFF"/>
+    <circle cx="149" cy="116" r="4" fill="#FFFFFF"/>
+    <circle cx="149" cy="134" r="4" fill="#FFFFFF"/>
+    <path d="M114 118 V134 A35 35 0 0 0 184 134 V118" fill="none" stroke="#2990EB" stroke-width="8" stroke-linecap="round"/>
+    <path d="M149 170 V193 M127 194 H171" fill="none" stroke="#2990EB" stroke-width="8" stroke-linecap="round"/>
+  </g>
+  <g font-family="Arial, Helvetica, sans-serif">
+    <text x="300" y="111" font-size="42" font-weight="700" fill="#FFFFFF">Microphone Recorder</text>
+    <text x="303" y="161" font-size="25" fill="#FFFFFF">Record your voice. Play it back.</text>
+    <rect x="303" y="190" width="197" height="40" rx="18" fill="#FFFFFF"/>
+    <text x="320" y="216" font-size="15" font-weight="700" fill="#2990EB">TURBOWARP EXTENSION</text>
+  </g>
+</svg>
