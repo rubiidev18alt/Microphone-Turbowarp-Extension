@@ -195,26 +195,23 @@
         const dataFormat = this.getDataFormat(mimeType);
         const storage = runtime.storage;
         const assetType = storage.AssetType.Sound;
-        const format = storage.DataFormat && storage.DataFormat[dataFormat.toUpperCase()]
-          ? storage.DataFormat[dataFormat.toUpperCase()]
-          : dataFormat;
+
+        // Keep the container extension in dataFormat and store the exact bytes.
         const asset = storage.createAsset(
           assetType,
-          format,
+          dataFormat,
           null,
           new Uint8Array(buffer),
-          {dataFormat: format}
+          {dataFormat}
         );
 
-        // Decode first so we can capture valid sample rate/count metadata.
-        // The AudioEngine uses the raw bytes; sound is added only after decode
-        // succeeds so a failure doesn't leave a broken entry in the Sounds tab.
+        // Decode first so the Sound entry receives real sample metadata/player.
         if (!runtime.audioEngine || typeof runtime.audioEngine.decodeSoundPlayer !== 'function') {
           throw new Error('The audio engine is unavailable in this TurboWarp version.');
         }
         const player = await runtime.audioEngine.decodeSoundPlayer({
           data: asset.data,
-          format,
+          format: dataFormat,
           assetId: asset.assetId,
           md5: asset.assetId + '.' + dataFormat
         });
@@ -222,7 +219,7 @@
         const sound = {
           name: 'Microphone recording',
           assetId: asset.assetId,
-          dataFormat: format,
+          dataFormat,
           format: '',
           rate: player.buffer.sampleRate,
           sampleCount: player.buffer.length,
@@ -231,16 +228,15 @@
           soundId: player.id
         };
 
-        // RenderedTarget.addSound maintains the sprite sound list and handles
-        // unique naming. Its sprite shares this list across clones.
-        if (typeof target.addSound !== 'function') {
+        // The sound bank must know the player before the sound is added.
+        if (typeof target.addSound !== 'function' ||
+            !target.sprite.soundBank ||
+            typeof target.sprite.soundBank.addSoundPlayer !== 'function') {
           if (player && typeof player.dispose === 'function') player.dispose();
           throw new Error('This TurboWarp version cannot add a sound to the selected sprite.');
         }
+        target.sprite.soundBank.addSoundPlayer(player);
         target.addSound(sound);
-        if (target.sprite.soundBank && typeof target.sprite.soundBank.addSoundPlayer === 'function') {
-          target.sprite.soundBank.addSoundPlayer(player);
-        }
       } catch (error) {
         this.showError('Could not save the recording as a sprite sound: ' + this.getErrorMessage(error));
       }
