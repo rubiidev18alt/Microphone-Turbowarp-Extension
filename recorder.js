@@ -99,6 +99,21 @@
             opcode: 'stopPlayback',
             blockType: Scratch.BlockType.COMMAND,
             text: 'stop playback'
+          },
+          {
+            opcode: 'requestMicrophonePermission',
+            blockType: Scratch.BlockType.COMMAND,
+            text: 'request microphone permission'
+          },
+          {
+            opcode: 'isRecording',
+            blockType: Scratch.BlockType.BOOLEAN,
+            text: 'is recording?'
+          },
+          {
+            opcode: 'saveLastRecordingAsSound',
+            blockType: Scratch.BlockType.COMMAND,
+            text: 'save last recording as sound'
           }
         ]
       };
@@ -114,6 +129,134 @@
       return CONFIG.preferredMimeTypes.find((mimeType) =>
         MediaRecorder.isTypeSupported(mimeType)
       ) || '';
+    }
+
+    /**
+     * Ask for permission only when a user runs the block. Browsers do not
+     * reliably show permission prompts during extension registration.
+     * If permission is granted, stop the short-lived stream so the mic is not
+     * left active; subsequent recording requests the device again as needed.
+     */
+    async requestMicrophonePermission() {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        this.showError('Microphone access is unavailable. Use a supported browser on HTTPS or localhost.');
+        return;
+      }
+
+      let stream;
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        this.permissionGranted = true;
+      } catch (error) {
+        this.permissionGranted = false;
+        this.showError(this.getErrorMessage(error));
+      } finally {
+        if (stream) stream.getTracks().forEach((track) => track.stop());
+      }
+    }
+
+    /**
+     * Boolean reporter. It reflects active capture, not whether permission was
+     * granted previously or whether the last take exists.
+     */
+    isRecording() {
+      return Boolean(this.mediaRecorder && this.mediaRecorder.state === 'recording');
+    }
+
+    /**
+     * Store the latest take in the current sprite's Sounds list.
+     *
+     * This uses TurboWarp's unsandboxed VM APIs. It deliberately rejects the
+     * Stage/backdrop target: Scratch backdrops cannot own sounds.
+     */
+    async saveLastRecordingAsSound(args, util) {
+      if (!this.audioUrl || !this.recordings.length) {
+        this.showError('Record something first, then save it as a sound.');
+        return;
+      }
+
+      const target = util && util.target;
+      if (!target || target.isStage) {
+        this.showError('Select a sprite to save the recording as a sound. The Stage/backdrop cannot own sounds.');
+        return;
+      }
+
+      const runtime = this.runtime;
+      if (!runtime || !runtime.storage || !runtime.storage.AssetType || !target.sprite) {
+        this.showError('This TurboWarp version does not expose the sound storage API needed by this block.');
+        return;
+      }
+
+      try {
+        const response = await fetch(this.audioUrl);
+        if (!response.ok) throw new Error('Could not read the recorded audio.');
+        const buffer = await response.arrayBuffer();
+        const mimeType = this.recordings[this.recordings.length - 1].blob.type || 'audio/webm';
+        const dataFormat = this.getDataFormat(mimeType);
+        const assetType = runtime.storage.AssetType.Sound;
+        const asset = runtime.storage.createAsset(
+          assetType,
+          runtime.storage.DataFormat[dataFormat.toUpperCase()] || dataFormat,
+          null,
+          new Uint8Array(buffer),
+          runtime.storage.AssetType
+        );
+
+        const soundName = this.makeUniqueSoundName(target, 'Microphone recording');
+        const sound = {
+          name: soundName,
+          assetId: asset.assetId,
+          dataFormat,
+          format: '',
+          rate: 0,
+          sampleCount: 0,
+          md5: asset.assetId + '.' + dataFormat,
+          asset
+        };
+
+        // Add through the target's public-ish list interface. Runtime versions
+        // expose either sprite.createSound or target.addSound for this task.
+        if (typeof target.sprite.createSound === 'function') {
+          target.sprite.createSound(sound);
+        } else if (typeof target.addSound === 'function') {
+          target.addSound(sound, target.sprite.sounds.length);
+        } else {
+          throw new Error('This TurboWarp version cannot add a sound to the selected sprite.');
+        }
+
+        if (runtime.audioEngine && typeof runtime.audioEngine.decodeSoundPlayer === 'function') {
+          const player = await runtime.audioEngine.decodeSoundPlayer(Object.assign({}, sound, {data: asset.data}));
+          sound.soundId = player.id;
+          sound.rate = player.buffer.sampleRate;
+          sound.sampleCount = player.buffer.length;
+          if (target.sprite.soundBank && typeof target.sprite.soundBank.addSoundPlayer === 'function') {
+            target.sprite.soundBank.addSoundPlayer(player);
+          }
+        }
+      } catch (error) {
+        this.showError('Could not save the recording as a sprite sound: ' + this.getErrorMessage(error));
+      }
+    }
+
+    getDataFormat(mimeType) {
+      const mime = String(mimeType).toLowerCase();
+      if (mime.includes('ogg')) return 'ogg';
+      if (mime.includes('mp4')) return 'mp4';
+      if (mime.includes('wav')) return 'wav';
+      // MediaRecorder commonly produces webm; some VM storage backends use
+      // the container's extension as dataFormat.
+      if (mime.includes('webm')) return 'webm';
+      return 'webm';
+    }
+
+    makeUniqueSoundName(target, baseName) {
+      const existing = (target.sprite && target.sprite.sounds) || [];
+      const names = new Set(existing.map((sound) => sound.name));
+      if (!names.has(baseName)) return baseName;
+
+      let index = 2;
+      while (names.has(baseName + ' ' + index)) index++;
+      return baseName + ' ' + index;
     }
 
     async startRecording() {
