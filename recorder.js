@@ -64,6 +64,13 @@
       this.waveformSource = null;
       this.waveformAudioContext = null;
       this.startTime = null;
+
+      // Speech-recognition state is kept separate from audio recording.
+      this.speechRecognition = null;
+      this.speechTranscriptText = '';
+      this.speechStatus = 'idle';
+      this.transcriptEditor = null;
+      this.transcriptStatusLabel = null;
       this.timerInterval = null;
 
       // Keep the listener reference so it can be removed if needed later.
@@ -116,12 +123,326 @@
             text: 'is recording?'
           },
           {
+            opcode: 'startSpeechToText',
+            blockType: Scratch.BlockType.COMMAND,
+            text: 'start speech to text'
+          },
+          {
+            opcode: 'stopSpeechToText',
+            blockType: Scratch.BlockType.COMMAND,
+            text: 'stop speech to text'
+          },
+          {
+            opcode: 'speechTranscript',
+            blockType: Scratch.BlockType.REPORTER,
+            text: 'transcribed speech'
+          },
+          {
+            opcode: 'showTranscriptEditor',
+            blockType: Scratch.BlockType.COMMAND,
+            text: 'open transcript text field'
+          },
+          {
             opcode: 'saveLastRecordingAsSound',
             blockType: Scratch.BlockType.COMMAND,
             text: 'save last recording as sound'
           }
         ]
       };
+    }
+
+    /**
+     * Start live speech transcription using the browser's SpeechRecognition
+     * implementation. Recognition availability is browser-dependent.
+     */
+    startSpeechToText() {
+      const SpeechRecognitionConstructor =
+        window.SpeechRecognition || window.webkitSpeechRecognition;
+
+      if (!SpeechRecognitionConstructor) {
+        this.speechStatus = 'unsupported';
+        this.showError('Speech-to-text is not supported in this browser. Try a browser that provides Web Speech recognition.');
+        return;
+      }
+
+      if (this.speechRecognition) {
+        // Ignore duplicate start blocks while a recognition session is active.
+        if (this.speechStatus === 'listening') return;
+        this.stopSpeechToText();
+      }
+
+      try {
+        const recognition = new SpeechRecognitionConstructor();
+        recognition.continuous = true;
+        recognition.interimResults = true;
+        recognition.lang = navigator.language || 'en-US';
+
+        this.speechTranscriptText = '';
+        this.speechStatus = 'listening';
+        this.speechRecognition = recognition;
+
+        recognition.onresult = (event) => {
+          let finalized = '';
+          let interim = '';
+          for (let i = 0; i < event.results.length; i++) {
+            const result = event.results[i];
+            const transcript = result[0] ? result[0].transcript : '';
+            if (result.isFinal) finalized += transcript;
+            else interim += transcript;
+          }
+
+          // Keep final recognized text stable while allowing the reporter and
+          // copyable editor to show the current, provisional words too.
+          this.speechTranscriptText = (finalized + interim).trim();
+          this.updateTranscriptEditor();
+        };
+
+        recognition.onerror = (event) => {
+          this.speechStatus = 'error';
+          const message = event.error === 'not-allowed'
+            ? 'Speech recognition permission was denied.'
+            : event.error === 'no-speech'
+              ? 'No speech was detected. Start speech-to-text and speak into the microphone.'
+              : 'Speech recognition error: ' + (event.error || 'unknown error');
+          this.updateTranscriptEditor(message);
+          if (event.error !== 'no-speech' && event.error !== 'aborted') {
+            this.showError(message);
+          }
+        };
+
+        recognition.onend = () => {
+          this.speechStatus = 'stopped';
+          this.speechRecognition = null;
+          this.updateTranscriptEditor();
+        };
+
+        this.updateTranscriptEditor();
+        recognition.start();
+      } catch (error) {
+        this.speechStatus = 'error';
+        this.speechRecognition = null;
+        this.showError('Could not start speech recognition: ' + this.getErrorMessage(error));
+        this.updateTranscriptEditor();
+      }
+    }
+
+    /** Stop listening but retain the transcript for editing/copying. */
+    stopSpeechToText() {
+      const recognition = this.speechRecognition;
+      if (!recognition) {
+        if (this.speechStatus === 'listening') this.speechStatus = 'stopped';
+        this.updateTranscriptEditor();
+        return;
+      }
+
+      this.speechStatus = 'stopping';
+      this.updateTranscriptEditor('Finishing transcription…');
+      try {
+        recognition.stop();
+      } catch (error) {
+        this.speechRecognition = null;
+        this.speechStatus = 'stopped';
+        this.updateTranscriptEditor();
+      }
+    }
+
+    /** Reporter value: current transcript, including recognized interim words. */
+    speechTranscript() {
+      return this.speechTranscriptText || '';
+    }
+
+    /**
+     * Open a small editor where the user can review, edit, select, and copy the
+     * transcript. This is intentionally a DOM text field rather than alert().
+     */
+    showTranscriptEditor() {
+      if (this.transcriptEditor && this.transcriptEditor.isConnected) {
+        this.transcriptEditor.style.display = 'block';
+        const textArea = this.transcriptEditor.querySelector('textarea');
+        if (textArea) textArea.focus();
+        this.updateTranscriptEditor();
+        return;
+      }
+
+      const panel = document.createElement('section');
+      panel.setAttribute('role', 'dialog');
+      panel.setAttribute('aria-label', 'Speech transcript');
+      Object.assign(panel.style, {
+        position: 'fixed',
+        right: '20px',
+        bottom: '20px',
+        width: 'min(420px, calc(100vw - 40px))',
+        boxSizing: 'border-box',
+        padding: '16px',
+        color: '#FFFFFF',
+        background: 'linear-gradient(145deg, rgba(31, 28, 65, 0.98), rgba(47, 35, 93, 0.98))',
+        border: '1px solid ' + CONFIG.overlayBorder,
+        borderRadius: '16px',
+        boxShadow: '0 16px 48px rgba(12, 7, 35, 0.4)',
+        fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+        zIndex: String(Number(CONFIG.overlayZIndex) + 1)
+      });
+
+      const top = document.createElement('div');
+      Object.assign(top.style, {
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: '12px',
+        marginBottom: '10px'
+      });
+
+      const heading = document.createElement('div');
+      heading.textContent = 'SPEECH TRANSCRIPT';
+      Object.assign(heading.style, {
+        fontSize: '12px',
+        fontWeight: '800',
+        letterSpacing: '1.1px',
+        color: '#DED5FF'
+      });
+
+      const close = document.createElement('button');
+      close.type = 'button';
+      close.textContent = '×';
+      close.setAttribute('aria-label', 'Close transcript editor');
+      Object.assign(close.style, {
+        border: '0',
+        borderRadius: '8px',
+        padding: '2px 9px',
+        color: '#FFFFFF',
+        background: 'rgba(255, 255, 255, 0.12)',
+        fontSize: '22px',
+        cursor: 'pointer'
+      });
+      close.addEventListener('click', () => {
+        panel.style.display = 'none';
+      });
+
+      top.append(heading, close);
+
+      const textArea = document.createElement('textarea');
+      textArea.setAttribute('aria-label', 'Recognized speech text');
+      textArea.placeholder = 'Your recognized words will appear here…';
+      textArea.spellcheck = true;
+      Object.assign(textArea.style, {
+        display: 'block',
+        width: '100%',
+        minHeight: '140px',
+        boxSizing: 'border-box',
+        resize: 'vertical',
+        padding: '12px',
+        border: '1px solid rgba(190, 169, 255, 0.3)',
+        borderRadius: '10px',
+        outline: 'none',
+        color: '#FFFFFF',
+        background: 'rgba(14, 11, 35, 0.7)',
+        fontFamily: 'inherit',
+        fontSize: '14px',
+        lineHeight: '1.5'
+      });
+      textArea.value = this.speechTranscriptText;
+      textArea.addEventListener('input', () => {
+        // Edits in the text field become the transcript reporter value too.
+        this.speechTranscriptText = textArea.value;
+      });
+
+      const status = document.createElement('div');
+      Object.assign(status.style, {
+        minHeight: '18px',
+        marginTop: '8px',
+        color: '#C7BDF0',
+        fontSize: '12px'
+      });
+
+      const actions = document.createElement('div');
+      Object.assign(actions.style, {
+        display: 'flex',
+        flexWrap: 'wrap',
+        gap: '8px',
+        marginTop: '10px'
+      });
+
+      const makeButton = (label, primary, onClick) => {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.textContent = label;
+        Object.assign(button.style, {
+          border: primary ? '1px solid rgba(221, 213, 255, 0.55)' : '1px solid rgba(190, 169, 255, 0.25)',
+          borderRadius: '9px',
+          padding: '9px 12px',
+          color: '#FFFFFF',
+          background: primary ? 'linear-gradient(135deg, #7656E8, #6242CC)' : 'rgba(255, 255, 255, 0.08)',
+          fontSize: '12px',
+          fontWeight: '700',
+          cursor: 'pointer'
+        });
+        button.addEventListener('click', onClick);
+        return button;
+      };
+
+      actions.append(
+        makeButton('Copy text', true, async () => {
+          this.speechTranscriptText = textArea.value;
+          try {
+            if (navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
+              await navigator.clipboard.writeText(textArea.value);
+            } else {
+              textArea.focus();
+              textArea.select();
+              const copied = document.execCommand('copy');
+              if (!copied) throw new Error('Clipboard access is unavailable');
+            }
+            status.textContent = 'Copied to clipboard';
+          } catch (error) {
+            textArea.focus();
+            textArea.select();
+            status.textContent = 'Text selected. Press Copy/Select All in your browser to copy it.';
+          }
+        }),
+        makeButton('Select all', false, () => {
+          textArea.focus();
+          textArea.select();
+          status.textContent = 'All transcript text selected';
+        }),
+        makeButton('Clear', false, () => {
+          textArea.value = '';
+          this.speechTranscriptText = '';
+          status.textContent = 'Transcript cleared';
+        })
+      );
+
+      panel.append(top, textArea, status, actions);
+      document.body.appendChild(panel);
+      this.transcriptEditor = panel;
+      this.transcriptStatusLabel = status;
+      this.updateTranscriptEditor();
+      textArea.focus();
+    }
+
+    /** Keep the editor synchronized with recognition until the user edits it. */
+    updateTranscriptEditor(statusMessage) {
+      if (!this.transcriptEditor || !this.transcriptEditor.isConnected) return;
+      const textArea = this.transcriptEditor.querySelector('textarea');
+      if (textArea && document.activeElement !== textArea) {
+        textArea.value = this.speechTranscriptText;
+      }
+      if (this.transcriptStatusLabel) {
+        if (statusMessage) {
+          this.transcriptStatusLabel.textContent = statusMessage;
+        } else if (this.speechStatus === 'listening') {
+          this.transcriptStatusLabel.textContent = 'Listening… speak, then run “stop speech to text”.';
+        } else if (this.speechStatus === 'stopping') {
+          this.transcriptStatusLabel.textContent = 'Finishing transcription…';
+        } else if (this.speechStatus === 'unsupported') {
+          this.transcriptStatusLabel.textContent = 'Speech recognition is not supported here.';
+        } else if (this.speechStatus === 'error') {
+          this.transcriptStatusLabel.textContent = 'Speech recognition stopped with an error.';
+        } else if (this.speechTranscriptText) {
+          this.transcriptStatusLabel.textContent = 'Transcript ready to edit or copy.';
+        } else {
+          this.transcriptStatusLabel.textContent = 'Press start speech to text and begin speaking.';
+        }
+      }
     }
 
     /**
