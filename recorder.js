@@ -192,36 +192,24 @@
         if (!response.ok) throw new Error('Could not read the recorded audio.');
         const buffer = await response.arrayBuffer();
         const mimeType = this.recordings[this.recordings.length - 1].blob.type || 'audio/webm';
-        const dataFormat = this.getDataFormat(mimeType);
-        const storage = runtime.storage;
-        const assetType = storage.AssetType.Sound;
-
-        // Keep the container extension in dataFormat and store the exact bytes.
-        const AssetType = storage.AssetType;
-        const DataFormat = storage.DataFormat || {};
-        const format = DataFormat[dataFormat.toUpperCase()] || dataFormat;
-        // MediaRecorder blobs can be WebM/OGG/MP4. TurboWarp's sound engine
-        // must decode the bytes before we can register a project sound.
+        // Decode the recorded bytes first, then convert to a broadly supported
+        // PCM WAV asset so the saved project sound is usable outside this session.
         if (!runtime.audioEngine || typeof runtime.audioEngine.decodeSoundPlayer !== 'function') {
           throw new Error('The audio engine is unavailable in this TurboWarp version.');
         }
         const player = await runtime.audioEngine.decodeSoundPlayer({
           data: {buffer, type: mimeType}
         });
-
         const storage = runtime.storage;
-        const assetType = storage.AssetType.Sound;
         const dataFormat = 'wav';
+        const format = storage.DataFormat && storage.DataFormat.WAV ? storage.DataFormat.WAV : 'wav';
         const wavBytes = this.audioBufferToWav(player.buffer);
-        const AssetType = storage.AssetType;
-        const DataFormat = storage.DataFormat || {};
-        const format = DataFormat.WAV || 'wav';
         const asset = storage.createAsset(
-          assetType,
+          storage.AssetType.Sound,
           format,
           null,
           wavBytes,
-          AssetType
+          storage.AssetType
         );
 
         const sound = {
