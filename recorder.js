@@ -288,27 +288,6 @@
       return new Uint8Array(wav);
     }
 
-    getDataFormat(mimeType) {
-      const mime = String(mimeType).toLowerCase();
-      if (mime.includes('ogg')) return 'ogg';
-      if (mime.includes('mp4')) return 'mp4';
-      if (mime.includes('wav')) return 'wav';
-      // MediaRecorder commonly produces webm; some VM storage backends use
-      // the container's extension as dataFormat.
-      if (mime.includes('webm')) return 'webm';
-      return 'webm';
-    }
-
-    makeUniqueSoundName(target, baseName) {
-      const existing = (target.sprite && target.sprite.sounds) || [];
-      const names = new Set(existing.map((sound) => sound.name));
-      if (!names.has(baseName)) return baseName;
-
-      let index = 2;
-      while (names.has(baseName + ' ' + index)) index++;
-      return baseName + ' ' + index;
-    }
-
     async startRecording() {
       // Prevent duplicate prompts or recorder instances, including while the
       // permission prompt is still pending.
