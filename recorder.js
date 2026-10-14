@@ -49,7 +49,10 @@
       this.chunks = [];
       this.recordings = [];
       this.audioElement = null;
+      this.audioUrl = null;
       this.stageOverlay = null;
+      this.overlayLabel = null;
+      this.overlayMeterFill = null;
       this.startTime = null;
       this.timerInterval = null;
 
@@ -105,15 +108,17 @@
     }
 
     async startRecording() {
-      // Prevent duplicate microphone prompts and duplicate recorder instances.
-      if (this.mediaRecorder &&
-          (this.mediaRecorder.state === 'recording' ||
-           this.mediaRecorder.state === 'paused')) {
+      // Prevent duplicate prompts or recorder instances, including while the
+      // permission prompt is still pending.
+      if (this.isStarting ||
+          (this.mediaRecorder &&
+           (this.mediaRecorder.state === 'recording' ||
+            this.mediaRecorder.state === 'paused'))) {
         return;
       }
 
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        this.showError('Microphone access is not supported in this browser.');
+        this.showError('Microphone access is not supported in this browser. Use HTTPS or localhost.');
         return;
       }
 
@@ -122,22 +127,26 @@
         return;
       }
 
+      this.isStarting = true;
       let stream;
+
       try {
         stream = await navigator.mediaDevices.getUserMedia({ audio: true });
 
         const mimeType = this.getSupportedMimeType();
         const recorderOptions = mimeType ? { mimeType } : undefined;
-        this.mediaRecorder = new MediaRecorder(stream, recorderOptions);
+        const recorder = new MediaRecorder(stream, recorderOptions);
+
+        this.mediaRecorder = recorder;
         this.chunks = [];
 
-        this.mediaRecorder.ondataavailable = (event) => {
+        recorder.ondataavailable = (event) => {
           if (event.data && event.data.size > 0) {
             this.chunks.push(event.data);
           }
         };
 
-        this.mediaRecorder.onerror = (event) => {
+        recorder.onerror = (event) => {
           const message = event.error && event.error.message
             ? event.error.message
             : 'The browser reported an audio recording error.';
@@ -145,8 +154,8 @@
           this.removeStageOverlay();
         };
 
-        this.mediaRecorder.onstop = () => this.saveFinishedRecording();
-        this.mediaRecorder.start();
+        recorder.onstop = () => this.saveFinishedRecording(recorder);
+        recorder.start();
         this.startTime = Date.now();
         this.addStageOverlay();
       } catch (error) {
@@ -156,6 +165,8 @@
         this.mediaRecorder = null;
         this.removeStageOverlay();
         this.showError(this.getErrorMessage(error));
+      } finally {
+        this.isStarting = false;
       }
     }
 
@@ -166,16 +177,16 @@
         return;
       }
 
-      // onstop is installed when recording starts. This avoids replacing it
-      // each time stop is requested and keeps cleanup in one place.
+      // onstop is installed when recording starts. This keeps finalization in
+      // one place and avoids replacing the callback on repeated stop requests.
       this.mediaRecorder.stop();
     }
 
-    saveFinishedRecording() {
-      const recorder = this.mediaRecorder;
-      if (!recorder) {
-        this.chunks = [];
-        this.removeStageOverlay();
+    saveFinishedRecording(recorder) {
+      // The event handler passes the specific recorder that emitted "stop",
+      // preventing an older event from finalizing a newer recording session.
+      if (this.mediaRecorder !== recorder) {
+        if (recorder.stream) recorder.stream.getTracks().forEach((track) => track.stop());
         return;
       }
 
@@ -195,13 +206,13 @@
         return;
       }
 
-      // Revoke a prior URL when an old recording is replaced.
-      this.releaseLastRecordingUrl();
+      // The extension exposes playback of the latest take, so release the
+      // previous URL before replacing it to avoid retaining browser resources.
+      this.releaseLastRecording();
 
-      const audioUrl = URL.createObjectURL(blob);
-      const audio = new Audio(audioUrl);
-      this.recordings.push({ blob, audio, audioUrl });
-      this.audioElement = audio;
+      this.audioUrl = URL.createObjectURL(blob);
+      this.audioElement = new Audio(this.audioUrl);
+      this.recordings = [{ blob, audio: this.audioElement, audioUrl: this.audioUrl }];
     }
 
     async playLastRecording() {
@@ -211,7 +222,6 @@
       }
 
       try {
-        // Avoid overlapping playback and surface autoplay / browser failures.
         this.audioElement.currentTime = 0;
         await this.audioElement.play();
       } catch (error) {
@@ -227,18 +237,13 @@
       this.audioElement.currentTime = 0;
     }
 
-    /**
-     * Release references held by the last recording before replacing it.
-     * Recording history is kept as metadata, but only the most recent audio
-     * URL is needed for the current block set.
-     */
-    releaseLastRecordingUrl() {
-      const previous = this.recordings[this.recordings.length - 1];
-      if (!previous) return;
+    releaseLastRecording() {
+      if (this.audioElement) this.audioElement.pause();
+      if (this.audioUrl) URL.revokeObjectURL(this.audioUrl);
 
-      previous.audio.pause();
-      if (previous.audioUrl) URL.revokeObjectURL(previous.audioUrl);
-      this.recordings.pop();
+      this.audioElement = null;
+      this.audioUrl = null;
+      this.recordings = [];
     }
 
     addStageOverlay() {
@@ -263,8 +268,7 @@
         zIndex: CONFIG.overlayZIndex
       });
 
-      // Use DOM methods rather than injecting HTML. Named elements are easier
-      // to find and customize than relying on firstChild or global IDs.
+      // DOM methods avoid HTML injection and make UI elements easy to target.
       const label = document.createElement('div');
       label.className = 'mic-recorder-status';
       label.textContent = 'Recording: 0s';
@@ -298,6 +302,9 @@
       this.overlayMeterFill = meterFill;
 
       this.timerInterval = setInterval(() => {
+        // A stop event may have removed the overlay between interval ticks.
+        if (!this.overlayLabel || !this.overlayMeterFill || !this.startTime) return;
+
         const elapsedSeconds = Math.floor((Date.now() - this.startTime) / 1000);
         this.overlayLabel.textContent = `Recording: ${elapsedSeconds}s`;
 
@@ -316,9 +323,7 @@
         this.stageOverlay.parentNode.removeChild(this.stageOverlay);
       }
 
-      if (this.timerInterval !== null) {
-        clearInterval(this.timerInterval);
-      }
+      if (this.timerInterval !== null) clearInterval(this.timerInterval);
 
       this.stageOverlay = null;
       this.overlayLabel = null;
@@ -347,7 +352,7 @@
       return error.message || String(error);
     }
 
-    // Stop an active recording when the TurboWarp stop-all button is clicked.
+    // Stop an active recording and playback when TurboWarp stop-all is clicked.
     handleStopAll() {
       this.stopRecording();
       this.stopPlayback();
