@@ -200,24 +200,29 @@
         const AssetType = storage.AssetType;
         const DataFormat = storage.DataFormat || {};
         const format = DataFormat[dataFormat.toUpperCase()] || dataFormat;
-        const asset = storage.createAsset(
-          assetType,
-          format,
-          null,
-          new Uint8Array(buffer),
-          AssetType
-        );
-
-        // Decode first so the Sound entry receives real sample metadata/player.
+        // MediaRecorder blobs can be WebM/OGG/MP4. TurboWarp's sound engine
+        // must decode the bytes before we can register a project sound.
         if (!runtime.audioEngine || typeof runtime.audioEngine.decodeSoundPlayer !== 'function') {
           throw new Error('The audio engine is unavailable in this TurboWarp version.');
         }
         const player = await runtime.audioEngine.decodeSoundPlayer({
-          data: asset.data,
-          format,
-          assetId: asset.assetId,
-          md5: asset.assetId + '.' + dataFormat
+          data: {buffer, type: mimeType}
         });
+
+        const storage = runtime.storage;
+        const assetType = storage.AssetType.Sound;
+        const dataFormat = 'wav';
+        const wavBytes = this.audioBufferToWav(player.buffer);
+        const AssetType = storage.AssetType;
+        const DataFormat = storage.DataFormat || {};
+        const format = DataFormat.WAV || 'wav';
+        const asset = storage.createAsset(
+          assetType,
+          format,
+          null,
+          wavBytes,
+          AssetType
+        );
 
         const sound = {
           name: 'Microphone recording',
@@ -231,18 +236,64 @@
           soundId: player.id
         };
 
-        // The sound bank must know the player before the sound is added.
         if (typeof target.addSound !== 'function' ||
             !target.sprite.soundBank ||
             typeof target.sprite.soundBank.addSoundPlayer !== 'function') {
           if (player && typeof player.dispose === 'function') player.dispose();
           throw new Error('This TurboWarp version cannot add a sound to the selected sprite.');
         }
+        // WAV output is supported by Scratch-compatible sound assets, avoiding
+        // project sounds that contain a MediaRecorder-only container.
+        sound.dataFormat = 'wav';
+        sound.md5 = asset.assetId + '.wav';
         target.sprite.soundBank.addSoundPlayer(player);
         target.addSound(sound);
       } catch (error) {
         this.showError('Could not save the recording as a sprite sound: ' + this.getErrorMessage(error));
       }
+    }
+
+
+    /**
+     * Convert a decoded AudioBuffer to PCM WAV. Scratch project sounds use
+     * portable asset formats; simply labeling a WebM blob as a sound asset
+     * would create an invalid sound for some player/editor paths.
+     */
+    audioBufferToWav(audioBuffer) {
+      const channelCount = audioBuffer.numberOfChannels;
+      const sampleRate = audioBuffer.sampleRate;
+      const frameCount = audioBuffer.length;
+      const bytesPerSample = 2;
+      const dataSize = frameCount * channelCount * bytesPerSample;
+      const wav = new ArrayBuffer(44 + dataSize);
+      const view = new DataView(wav);
+      const writeText = (offset, value) => {
+        for (let i = 0; i < value.length; i++) view.setUint8(offset + i, value.charCodeAt(i));
+      };
+
+      writeText(0, 'RIFF');
+      view.setUint32(4, 36 + dataSize, true);
+      writeText(8, 'WAVE');
+      writeText(12, 'fmt ');
+      view.setUint32(16, 16, true);
+      view.setUint16(20, 1, true);
+      view.setUint16(22, channelCount, true);
+      view.setUint32(24, sampleRate, true);
+      view.setUint32(28, sampleRate * channelCount * bytesPerSample, true);
+      view.setUint16(32, channelCount * bytesPerSample, true);
+      view.setUint16(34, 16, true);
+      writeText(36, 'data');
+      view.setUint32(40, dataSize, true);
+
+      let offset = 44;
+      for (let frame = 0; frame < frameCount; frame++) {
+        for (let channel = 0; channel < channelCount; channel++) {
+          const sample = Math.max(-1, Math.min(1, audioBuffer.getChannelData(channel)[frame]));
+          view.setInt16(offset, sample < 0 ? sample * 0x8000 : sample * 0x7fff, true);
+          offset += bytesPerSample;
+        }
+      }
+      return new Uint8Array(wav);
     }
 
     getDataFormat(mimeType) {
