@@ -1,136 +1,358 @@
-(function(Scratch) {
+/*
+ * Microphone Recorder — TurboWarp extension
+ *
+ * CUSTOMIZATION GUIDE
+ * ------------------
+ * Start here when modifying this extension:
+ *   CONFIG              Colors, overlay appearance, and recording options.
+ *   getInfo()           Block labels and extension metadata.
+ *   startRecording()    Microphone permission and recording setup.
+ *   stopRecording()     Finalize a recording and save it for playback.
+ *   playLastRecording() Playback behavior.
+ *   addStageOverlay()   Recording status overlay.
+ *
+ * Keep each responsibility in its own method where possible. This makes the
+ * file easier for people and AI coding tools to understand and safely edit.
+ */
+(function (Scratch) {
   'use strict';
+
+  // === CONFIG: safe, centralized customization points ======================
+  const CONFIG = {
+    extensionName: 'Microphone Recorder',
+    extensionColor: '#ff0000',
+    extensionColorDark: '#D10000',
+    extensionColorDarker: '#A30000',
+
+    // A recording duration limit is not enforced. This only controls the
+    // visual scale of the overlay meter; set to 0 to disable the meter.
+    overlayMeterSeconds: 60,
+    overlayTop: '40px',
+    overlayZIndex: '9999',
+    overlayBackground: 'rgba(255, 0, 0, 0.85)',
+    overlayMeterBackground: '#a30000',
+    overlayMeterForeground: '#ff0000',
+
+    // Prefer browser-supported formats instead of assuming WebM is available.
+    preferredMimeTypes: [
+      'audio/webm;codecs=opus',
+      'audio/webm',
+      'audio/ogg;codecs=opus',
+      'audio/mp4'
+    ]
+  };
 
   class MicRecorder {
     constructor(runtime) {
-      this.runtime = runtime; 
+      this.runtime = runtime;
       this.mediaRecorder = null;
       this.chunks = [];
       this.recordings = [];
       this.audioElement = null;
-
       this.stageOverlay = null;
       this.startTime = null;
       this.timerInterval = null;
 
-      // Hook into stop events
-      if (runtime) {
-        runtime.on('PROJECT_STOP_ALL', this.handleStopAll.bind(this));
+      // Keep the listener reference so it can be removed if needed later.
+      this.handleStopAllBound = this.handleStopAll.bind(this);
+      if (this.runtime && typeof this.runtime.on === 'function') {
+        this.runtime.on('PROJECT_STOP_ALL', this.handleStopAllBound);
       }
     }
 
     getInfo() {
       return {
         id: 'micRecorder',
-        name: 'Microphone Recorder',
-        color1: '#ff0000',
-        color2: '#D10000',
-        color3: '#A30000',
+        name: CONFIG.extensionName,
+        color1: CONFIG.extensionColor,
+        color2: CONFIG.extensionColorDark,
+        color3: CONFIG.extensionColorDarker,
         blocks: [
-          { opcode: 'startRecording', blockType: Scratch.BlockType.COMMAND, text: 'start microphone recording' },
-          { opcode: 'stopRecording', blockType: Scratch.BlockType.COMMAND, text: 'stop microphone recording' },
-          { opcode: 'playLastRecording', blockType: Scratch.BlockType.COMMAND, text: 'play last recording' },
-          { opcode: 'stopPlayback', blockType: Scratch.BlockType.COMMAND, text: 'stop playback' }
+          {
+            opcode: 'startRecording',
+            blockType: Scratch.BlockType.COMMAND,
+            text: 'start microphone recording'
+          },
+          {
+            opcode: 'stopRecording',
+            blockType: Scratch.BlockType.COMMAND,
+            text: 'stop microphone recording'
+          },
+          {
+            opcode: 'playLastRecording',
+            blockType: Scratch.BlockType.COMMAND,
+            text: 'play last recording'
+          },
+          {
+            opcode: 'stopPlayback',
+            blockType: Scratch.BlockType.COMMAND,
+            text: 'stop playback'
+          }
         ]
       };
     }
 
-    async startRecording() {
-      if (this.mediaRecorder && this.mediaRecorder.state === 'recording') return;
+    /**
+     * Pick a media type only when the browser says it supports it.
+     * An empty string lets the browser choose its default format.
+     */
+    getSupportedMimeType() {
+      if (typeof MediaRecorder.isTypeSupported !== 'function') return '';
 
+      return CONFIG.preferredMimeTypes.find((mimeType) =>
+        MediaRecorder.isTypeSupported(mimeType)
+      ) || '';
+    }
+
+    async startRecording() {
+      // Prevent duplicate microphone prompts and duplicate recorder instances.
+      if (this.mediaRecorder &&
+          (this.mediaRecorder.state === 'recording' ||
+           this.mediaRecorder.state === 'paused')) {
+        return;
+      }
+
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        this.showError('Microphone access is not supported in this browser.');
+        return;
+      }
+
+      if (typeof MediaRecorder === 'undefined') {
+        this.showError('Audio recording is not supported in this browser.');
+        return;
+      }
+
+      let stream;
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        this.mediaRecorder = new MediaRecorder(stream);
+        stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+
+        const mimeType = this.getSupportedMimeType();
+        const recorderOptions = mimeType ? { mimeType } : undefined;
+        this.mediaRecorder = new MediaRecorder(stream, recorderOptions);
         this.chunks = [];
 
-        this.mediaRecorder.ondataavailable = e => {
-          if (e.data.size > 0) this.chunks.push(e.data);
+        this.mediaRecorder.ondataavailable = (event) => {
+          if (event.data && event.data.size > 0) {
+            this.chunks.push(event.data);
+          }
         };
 
+        this.mediaRecorder.onerror = (event) => {
+          const message = event.error && event.error.message
+            ? event.error.message
+            : 'The browser reported an audio recording error.';
+          this.showError(message);
+          this.removeStageOverlay();
+        };
+
+        this.mediaRecorder.onstop = () => this.saveFinishedRecording();
         this.mediaRecorder.start();
         this.startTime = Date.now();
         this.addStageOverlay();
-      } catch (err) {
-        alert('Microphone error: ' + err);
+      } catch (error) {
+        // If recorder creation/start fails after permission is granted, do not
+        // leave the microphone stream active.
+        if (stream) stream.getTracks().forEach((track) => track.stop());
+        this.mediaRecorder = null;
+        this.removeStageOverlay();
+        this.showError(this.getErrorMessage(error));
       }
     }
 
     stopRecording() {
-      if (!this.mediaRecorder || (this.mediaRecorder.state !== 'recording' && this.mediaRecorder.state !== 'paused')) return;
+      if (!this.mediaRecorder ||
+          (this.mediaRecorder.state !== 'recording' &&
+           this.mediaRecorder.state !== 'paused')) {
+        return;
+      }
 
-      this.mediaRecorder.onstop = () => {
-        const blob = new Blob(this.chunks, { type: 'audio/webm' });
-        this.chunks = [];
-        this.mediaRecorder.stream.getTracks().forEach(track => track.stop());
-        this.mediaRecorder = null;
-
-        const audio = new Audio(URL.createObjectURL(blob));
-        this.recordings.push({ blob, audio });
-        this.audioElement = audio;
-
-        this.removeStageOverlay();
-      };
-
+      // onstop is installed when recording starts. This avoids replacing it
+      // each time stop is requested and keeps cleanup in one place.
       this.mediaRecorder.stop();
     }
 
-    playLastRecording() {
-      if (!this.audioElement) return;
-      this.audioElement.play();
+    saveFinishedRecording() {
+      const recorder = this.mediaRecorder;
+      if (!recorder) {
+        this.chunks = [];
+        this.removeStageOverlay();
+        return;
+      }
+
+      const mimeType = recorder.mimeType || 'application/octet-stream';
+      const blob = new Blob(this.chunks, { type: mimeType });
+      this.chunks = [];
+
+      // Release the microphone immediately after the browser finalizes data.
+      if (recorder.stream) {
+        recorder.stream.getTracks().forEach((track) => track.stop());
+      }
+      this.mediaRecorder = null;
+      this.removeStageOverlay();
+
+      if (blob.size === 0) {
+        this.showError('No audio data was recorded. Try recording again.');
+        return;
+      }
+
+      // Revoke a prior URL when an old recording is replaced.
+      this.releaseLastRecordingUrl();
+
+      const audioUrl = URL.createObjectURL(blob);
+      const audio = new Audio(audioUrl);
+      this.recordings.push({ blob, audio, audioUrl });
+      this.audioElement = audio;
+    }
+
+    async playLastRecording() {
+      if (!this.audioElement) {
+        this.showError('There is no recording to play yet.');
+        return;
+      }
+
+      try {
+        // Avoid overlapping playback and surface autoplay / browser failures.
+        this.audioElement.currentTime = 0;
+        await this.audioElement.play();
+      } catch (error) {
+        this.showError('Could not play the recording: ' +
+          this.getErrorMessage(error));
+      }
     }
 
     stopPlayback() {
       if (!this.audioElement) return;
+
       this.audioElement.pause();
       this.audioElement.currentTime = 0;
+    }
+
+    /**
+     * Release references held by the last recording before replacing it.
+     * Recording history is kept as metadata, but only the most recent audio
+     * URL is needed for the current block set.
+     */
+    releaseLastRecordingUrl() {
+      const previous = this.recordings[this.recordings.length - 1];
+      if (!previous) return;
+
+      previous.audio.pause();
+      if (previous.audioUrl) URL.revokeObjectURL(previous.audioUrl);
+      this.recordings.pop();
     }
 
     addStageOverlay() {
       if (this.stageOverlay) return;
 
       const overlay = document.createElement('div');
-      overlay.style.position = 'absolute';
-      overlay.style.top = '40px';
-      overlay.style.left = '50%';
-      overlay.style.transform = 'translateX(-50%)';
-      overlay.style.padding = '10px 20px';
-      overlay.style.background = 'rgba(255,0,0,0.85)';
-      overlay.style.color = 'white';
-      overlay.style.fontFamily = 'Arial, sans-serif';
-      overlay.style.fontSize = '18px';
-      overlay.style.fontWeight = 'bold';
-      overlay.style.borderRadius = '8px';
-      overlay.style.textAlign = 'center';
-      overlay.style.zIndex = '9999';
-      overlay.innerHTML = `<div>Recording: 0s</div><div style="margin-top:5px; width:200px; height:10px; background:#a30000; border-radius:5px;"><div id="progressBar" style="height:100%; width:0%; background:#ff0000; border-radius:5px;"></div></div>`;
+      overlay.setAttribute('role', 'status');
+      overlay.setAttribute('aria-live', 'polite');
+      Object.assign(overlay.style, {
+        position: 'absolute',
+        top: CONFIG.overlayTop,
+        left: '50%',
+        transform: 'translateX(-50%)',
+        padding: '10px 20px',
+        background: CONFIG.overlayBackground,
+        color: '#fff',
+        fontFamily: 'Arial, sans-serif',
+        fontSize: '18px',
+        fontWeight: 'bold',
+        borderRadius: '8px',
+        textAlign: 'center',
+        zIndex: CONFIG.overlayZIndex
+      });
 
+      // Use DOM methods rather than injecting HTML. Named elements are easier
+      // to find and customize than relying on firstChild or global IDs.
+      const label = document.createElement('div');
+      label.className = 'mic-recorder-status';
+      label.textContent = 'Recording: 0s';
+
+      const meterTrack = document.createElement('div');
+      meterTrack.className = 'mic-recorder-meter-track';
+      Object.assign(meterTrack.style, {
+        marginTop: '5px',
+        width: '200px',
+        height: '10px',
+        background: CONFIG.overlayMeterBackground,
+        borderRadius: '5px',
+        overflow: 'hidden'
+      });
+
+      const meterFill = document.createElement('div');
+      meterFill.className = 'mic-recorder-meter-fill';
+      Object.assign(meterFill.style, {
+        height: '100%',
+        width: '0%',
+        background: CONFIG.overlayMeterForeground,
+        borderRadius: '5px'
+      });
+
+      meterTrack.appendChild(meterFill);
+      overlay.append(label, meterTrack);
       document.body.appendChild(overlay);
-      this.stageOverlay = overlay;
 
-      const progressBar = overlay.querySelector('#progressBar');
+      this.stageOverlay = overlay;
+      this.overlayLabel = label;
+      this.overlayMeterFill = meterFill;
 
       this.timerInterval = setInterval(() => {
-        const elapsed = Math.floor((Date.now() - this.startTime) / 1000);
-        overlay.firstChild.innerText = `Recording: ${elapsed}s`;
-        const progressPercent = Math.min(elapsed / 60 * 100, 100);
-        progressBar.style.width = `${progressPercent}%`;
+        const elapsedSeconds = Math.floor((Date.now() - this.startTime) / 1000);
+        this.overlayLabel.textContent = `Recording: ${elapsedSeconds}s`;
+
+        const scaleSeconds = Number(CONFIG.overlayMeterSeconds);
+        if (scaleSeconds > 0) {
+          const progress = Math.min((elapsedSeconds / scaleSeconds) * 100, 100);
+          this.overlayMeterFill.style.width = `${progress}%`;
+        } else {
+          this.overlayMeterFill.style.width = '0%';
+        }
       }, 250);
     }
 
     removeStageOverlay() {
-      if (this.stageOverlay) document.body.removeChild(this.stageOverlay);
+      if (this.stageOverlay && this.stageOverlay.parentNode) {
+        this.stageOverlay.parentNode.removeChild(this.stageOverlay);
+      }
+
+      if (this.timerInterval !== null) {
+        clearInterval(this.timerInterval);
+      }
+
       this.stageOverlay = null;
-      if (this.timerInterval) clearInterval(this.timerInterval);
+      this.overlayLabel = null;
+      this.overlayMeterFill = null;
       this.timerInterval = null;
+      this.startTime = null;
     }
 
-    // Handle TurboWarp/Scratch stop button
-    handleStopAll() {
-      if (this.mediaRecorder && (this.mediaRecorder.state === 'recording' || this.mediaRecorder.state === 'paused')) {
-        this.stopRecording();
+    showError(message) {
+      // Error feedback must not crash the extension in restricted embeds.
+      if (typeof alert === 'function') {
+        alert('Microphone Recorder: ' + message);
+      } else {
+        console.error('Microphone Recorder:', message);
       }
+    }
+
+    getErrorMessage(error) {
+      if (!error) return 'Unknown error.';
+      if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
+        return 'Microphone permission was denied. Allow microphone access and try again.';
+      }
+      if (error.name === 'NotFoundError' || error.name === 'DevicesNotFoundError') {
+        return 'No microphone was found.';
+      }
+      return error.message || String(error);
+    }
+
+    // Stop an active recording when the TurboWarp stop-all button is clicked.
+    handleStopAll() {
+      this.stopRecording();
+      this.stopPlayback();
     }
   }
 
-  Scratch.extensions.register(new MicRecorder());
+  Scratch.extensions.register(new MicRecorder(Scratch.vm && Scratch.vm.runtime));
 })(Scratch);
