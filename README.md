@@ -65,6 +65,20 @@ The main class is split into small methods so it is easier to modify:
 7. Saving audio requires the extension to run unsandboxed in TurboWarp. Sounds
    belong to sprites; the Stage/backdrop cannot own sounds.
 
+## Speech-to-text
+
+The extension includes **start speech to text**, **stop speech to text**, the
+**transcribed speech** reporter, and **open transcript text field**. Start
+recognition, speak until the transcript is good enough, then stop recognition.
+The text field shows the recognized words and lets you edit, select all, copy,
+or clear them. The reporter returns the current transcript so Scratch/TurboWarp
+scripts can also use the text.
+
+Speech recognition uses the browser's Web Speech API and is not supported by
+every browser. It may use the browser's online speech service, depending on the
+browser and platform. Recognition generally requires a secure page and user
+permission. This feature is separate from the recorded-audio workflow.
+
 ## License
 
 This project is licensed under Creative Commons Attribution-NonCommercial 4.0
