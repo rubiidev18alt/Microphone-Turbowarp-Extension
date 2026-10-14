@@ -212,8 +212,9 @@
           storage.AssetType
         );
 
+        const wavBuffer = wavBytes.buffer.slice(wavBytes.byteOffset, wavBytes.byteOffset + wavBytes.byteLength);
         const storedPlayer = await runtime.audioEngine.decodeSoundPlayer({
-          data: {buffer: wavBytes.buffer, type: 'audio/wav'},
+          data: {buffer: wavBuffer, type: 'audio/wav'},
           format: 'wav',
           assetId: asset.assetId,
           md5: asset.assetId + '.wav'
