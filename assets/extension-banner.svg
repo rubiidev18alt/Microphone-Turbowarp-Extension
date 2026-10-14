@@ -1,31 +1,33 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="960" height="300" viewBox="0 0 960 300">
-  <rect width="960" height="300" fill="#4BBEFF"/>
-  <g fill="#54C7FF">
-    <path d="M0 0H52L352 300H300Z"/>
-    <path d="M190 0H242L542 300H490Z"/>
-    <path d="M380 0H432L732 300H680Z"/>
-    <path d="M570 0H622L922 300H870Z"/>
-    <path d="M760 0H812L960 148V200Z"/>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#31245F"/>
+      <stop offset=".55" stop-color="#7656E8"/>
+      <stop offset="1" stop-color="#4D36B1"/>
+    </linearGradient>
+    <linearGradient id="wave" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#6BE4FF"/>
+      <stop offset=".5" stop-color="#FFFFFF"/>
+      <stop offset="1" stop-color="#F2A6FF"/>
+    </linearGradient>
+  </defs>
+  <rect width="960" height="300" rx="22" fill="url(#bg)"/>
+  <g fill="#FFFFFF" fill-opacity=".06">
+    <path d="M580 0H660L900 300H820Z"/>
+    <path d="M730 0H770L960 230V280Z"/>
+    <circle cx="810" cy="70" r="160"/>
   </g>
-  <rect x="34" y="30" width="230" height="230" rx="34" fill="#FFFFFF"/>
-  <g fill="none" stroke="#2990EB" stroke-width="6" stroke-linecap="round">
-    <path d="M85 108 Q52 148 85 188"/>
-    <path d="M213 108 Q246 148 213 188"/>
-    <path d="M101 90 Q55 148 101 206"/>
-    <path d="M197 90 Q243 148 197 206"/>
-  </g>
-  <g fill="#2990EB">
-    <rect x="129" y="75" width="40" height="87" rx="20"/>
-    <circle cx="149" cy="98" r="4" fill="#FFFFFF"/>
-    <circle cx="149" cy="116" r="4" fill="#FFFFFF"/>
-    <circle cx="149" cy="134" r="4" fill="#FFFFFF"/>
-    <path d="M114 118 V134 A35 35 0 0 0 184 134 V118" fill="none" stroke="#2990EB" stroke-width="8" stroke-linecap="round"/>
-    <path d="M149 170 V193 M127 194 H171" fill="none" stroke="#2990EB" stroke-width="8" stroke-linecap="round"/>
+  <rect x="35" y="32" width="225" height="236" rx="30" fill="#211B48" fill-opacity=".82" stroke="#D9CCFF" stroke-opacity=".6" stroke-width="2"/>
+  <g stroke="url(#wave)" stroke-linecap="round" stroke-width="6">
+    <path d="M65 150V136 M83 150V108 M101 150V84 M119 150V126 M137 150V96 M155 150V72 M173 150V112 M191 150V90 M209 150V130 M227 150V140"/>
+    <path d="M65 150V164 M83 150V192 M101 150V216 M119 150V174 M137 150V204 M155 150V228 M173 150V188 M191 150V210 M209 150V170 M227 150V160"/>
   </g>
   <g font-family="Arial, Helvetica, sans-serif">
-    <text x="300" y="111" font-size="42" font-weight="700" fill="#FFFFFF">Microphone Recorder</text>
-    <text x="303" y="161" font-size="25" fill="#FFFFFF">Record your voice. Play it back.</text>
-    <rect x="303" y="190" width="197" height="40" rx="18" fill="#FFFFFF"/>
-    <text x="320" y="216" font-size="15" font-weight="700" fill="#2990EB">TURBOWARP EXTENSION</text>
+    <text x="306" y="100" fill="#FFFFFF" font-size="48" font-weight="750">Microphone Studio</text>
+    <text x="309" y="147" fill="#E2D9FF" font-size="23">Record. Visualize. Replay.</text>
+    <text x="309" y="183" fill="#E2D9FF" font-size="17">A live waveform recorder for TurboWarp</text>
+    <rect x="309" y="211" width="205" height="42" rx="20" fill="#FFFFFF" fill-opacity=".14" stroke="#D9CCFF" stroke-opacity=".6"/>
+    <circle cx="331" cy="232" r="5" fill="#FF8DAA"/>
+    <text x="346" y="238" fill="#FFFFFF" font-size="15" font-weight="700" letter-spacing="1">TURBOWARP EXTENSION</text>
   </g>
 </svg>
