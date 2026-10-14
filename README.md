@@ -4,7 +4,7 @@ Record audio from your microphone, then play back your latest take. A small,
 Scratch-inspired extension with a bright microphone icon and simple recording
 blocks.
 
-![Microphone Recorder extension banner](assets/extension-banner.png)
+![Microphone Recorder extension banner](assets/extension-banner.svg)
 
 ## Title and description
 
