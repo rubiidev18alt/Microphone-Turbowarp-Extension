@@ -20,6 +20,9 @@
   // === CONFIG: safe, centralized customization points ======================
   const CONFIG = {
     extensionName: 'Microphone Recorder',
+    extensionDescription: 'Record audio from your microphone and play back your latest take in TurboWarp.',
+    blockIconURI: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMjgiIGhlaWdodD0iMTI4IiB2aWV3Qm94PSIwIDAgMTI4IDEyOCI+PHJlY3QgeD0iMyIgeT0iMyIgd2lkdGg9IjEyMiIgaGVpZ2h0PSIxMjIiIHJ4PSIyOCIgZmlsbD0iIzRCQkVGRiIvPjxnIGZpbGw9Im5vbmUiIHN0cm9rZT0iI0UwRjZGRiIgc3Ryb2tlLXdpZHRoPSI0IiBzdHJva2UtbGluZWNhcD0icm91bmQiPjxwYXRoIGQ9Ik0yOCA0OCBRMTQgNjQgMjggODAiLz48cGF0aCBkPSJN MTAwIDQ4IFE xMTQgNjQgMTAwIDgwIi8+PHBhdGggZD0iTTM4IDM5IFE xOCA2NCAzOCA4OSIvPjxwYXRoIGQ9Ik05MCAzOSBRMTEwIDY0IDkwIDg5Ii8+PC9nPjxnIGZpbGw9IiNGRkZGRkYiPjxyZWN0IHg9IjUyIiB5PSIyNCIgd2lkdGg9IjI0IiBoZWlnaHQ9IjU0IiByeD0iMTIiLz48Y2lyY2xlIGN4PSI2NCIgY3k9IjM5IiByPSIzIiBmaWxsPSIjMjk5MEVCIi8+PGNpcmNsZSBjeD0iNjQiIGN5PSI1MCIgcj0iMyIgZmlsbD0iIzI5OTBFQiIvPjxjaXJjbGUgY3g9IjY0IiBjeT0iNjEiIHI9IjMiIGZpbGw9IiMyOTkwRUIiLz48cGF0aCBkPSJNNDQgNTEgVjYwIEEyMCAyMCAwIDAgMCA4NCA2MCBWNTEiIGZpbGw9Im5vbmUiIHN0cm9rZT0iI0ZGRkZGRiIgc3Ryb2tlLXdpZHRoPSI1IiBzdHJva2UtbGluZWNhcD0icm91bmQiLz48cGF0aCBkPSJNNjQgODAgVjk1IE01MSA5NiBINDciIHN0cm9rZT0iI0ZGRkZGRiIgc3Ryb2tlLXdpZHRoPSI1IiBzdHJva2UtbGluZWNhcD0icm91bmQiLz48L2c+PC9zdmc+',
+    menuIconURI: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMjgiIGhlaWdodD0iMTI4IiB2aWV3Qm94PSIwIDAgMTI4IDEyOCI+PHJlY3QgeD0iMyIgeT0iMyIgd2lkdGg9IjEyMiIgaGVpZ2h0PSIxMjIiIHJ4PSIyOCIgZmlsbD0iIzRCQkVGRiIvPjxnIGZpbGw9Im5vbmUiIHN0cm9rZT0iI0UwRjZGRiIgc3Ryb2tlLXdpZHRoPSI0IiBzdHJva2UtbGluZWNhcD0icm91bmQiPjxwYXRoIGQ9Ik0yOCA0OCBRMTQgNjQgMjggODAiLz48cGF0aCBkPSJN MTAwIDQ4IFE xMTQgNjQgMTAwIDgwIi8+PHBhdGggZD0iTTM4IDM5IFE xOCA2NCAzOCA4OSIvPjxwYXRoIGQ9Ik05MCAzOSBRMTEwIDY0IDkwIDg5Ii8+PC9nPjxnIGZpbGw9IiNGRkZGRkYiPjxyZWN0IHg9IjUyIiB5PSIyNCIgd2lkdGg9IjI0IiBoZWlnaHQ9IjU0IiByeD0iMTIiLz48Y2lyY2xlIGN4PSI2NCIgY3k9IjM5IiByPSIzIiBmaWxsPSIjMjk5MEVCIi8+PGNpcmNsZSBjeD0iNjQiIGN5PSI1MCIgcj0iMyIgZmlsbD0iIzI5OTBFQiIvPjxjaXJjbGUgY3g9IjY0IiBjeT0iNjEiIHI9IjMiIGZpbGw9IiMyOTkwRUIiLz48cGF0aCBkPSJNNDQgNTEgVjYwIEEyMCAyMCAwIDAgMCA4NCA2MCBWNTEiIGZpbGw9Im5vbmUiIHN0cm9rZT0iI0ZGRkZGRiIgc3Ryb2tlLXdpZHRoPSI1IiBzdHJva2UtbGluZWNhcD0icm91bmQiLz48cGF0aCBkPSJNNjQgODAgVjk1IE01MSA5NiBINDciIHN0cm9rZT0iI0ZGRkZGRiIgc3Ryb2tlLXdpZHRoPSI1IiBzdHJva2UtbGluZWNhcD0icm91bmQiLz48L2c+PC9zdmc+',
     extensionColor: '#ff0000',
     extensionColorDark: '#D10000',
     extensionColorDarker: '#A30000',
@@ -67,6 +70,9 @@
       return {
         id: 'micRecorder',
         name: CONFIG.extensionName,
+        docsURI: 'https://github.com/rubiidev18alt/Microphone-Turbowarp-Extension',
+        blockIconURI: CONFIG.blockIconURI,
+        menuIconURI: CONFIG.menuIconURI,
         color1: CONFIG.extensionColor,
         color2: CONFIG.extensionColorDark,
         color3: CONFIG.extensionColorDarker,
