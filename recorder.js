@@ -197,12 +197,15 @@
         const assetType = storage.AssetType.Sound;
 
         // Keep the container extension in dataFormat and store the exact bytes.
+        const AssetType = storage.AssetType;
+        const DataFormat = storage.DataFormat || {};
+        const format = DataFormat[dataFormat.toUpperCase()] || dataFormat;
         const asset = storage.createAsset(
           assetType,
-          dataFormat,
+          format,
           null,
           new Uint8Array(buffer),
-          {dataFormat}
+          AssetType
         );
 
         // Decode first so the Sound entry receives real sample metadata/player.
@@ -211,7 +214,7 @@
         }
         const player = await runtime.audioEngine.decodeSoundPlayer({
           data: asset.data,
-          format: dataFormat,
+          format,
           assetId: asset.assetId,
           md5: asset.assetId + '.' + dataFormat
         });
