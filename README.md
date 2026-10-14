@@ -53,6 +53,9 @@ The main class is split into small methods so it is easier to modify:
 - `isRecording()` — Boolean reporter for the active capture state.
 - `saveLastRecordingAsSound()` — saves the latest take to the current sprite's Sounds list (not the Stage/backdrop).
 - `addStageOverlay()` / `removeStageOverlay()` — recording indicator UI.
+- `requestMicrophonePermission()` — explicit permission request from a user-run block.
+- `isRecording()` — Boolean reporter for the active capture state.
+- `saveLastRecordingAsSound()` — saves the latest take as a portable WAV sound on the current sprite.
 - `showError()` / `getErrorMessage()` — user-facing error reporting.
 
 ### Guidelines for contributors and AI coding tools
@@ -64,6 +67,9 @@ The main class is split into small methods so it is easier to modify:
    `URL.revokeObjectURL()` to avoid retaining browser resources.
 5. Do not describe the overlay meter as a hard recording limit unless you add
    and test actual stop-after-duration logic.
+6. Saving audio requires an unsandboxed TurboWarp extension. Sound assets belong
+   to sprites; the Stage/backdrop cannot own sounds. Browser permission prompts
+   normally require a user action, so use the permission-request block after loading.
 6. Sound saving requires an unsandboxed TurboWarp extension and compatible VM
    audio/storage APIs. Sound assets belong to sprites; Stage backdrops cannot
    own sounds.
