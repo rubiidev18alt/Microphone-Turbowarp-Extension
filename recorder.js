@@ -661,13 +661,6 @@
 
       this.waveformAnimationFrame = requestAnimationFrame(draw);
     }
-      const progress = Math.min((elapsedSeconds / scaleSeconds) * 100, 100);
-          this.overlayMeterFill.style.width = `${progress}%`;
-        } else {
-          this.overlayMeterFill.style.width = '0%';
-        }
-      }, 250);
-    }
 
     removeStageOverlay() {
       if (this.stageOverlay && this.stageOverlay.parentNode) {
