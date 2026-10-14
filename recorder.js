@@ -193,45 +193,53 @@
         const buffer = await response.arrayBuffer();
         const mimeType = this.recordings[this.recordings.length - 1].blob.type || 'audio/webm';
         const dataFormat = this.getDataFormat(mimeType);
-        const assetType = runtime.storage.AssetType.Sound;
-        const asset = runtime.storage.createAsset(
+        const storage = runtime.storage;
+        const assetType = storage.AssetType.Sound;
+        const format = storage.DataFormat && storage.DataFormat[dataFormat.toUpperCase()]
+          ? storage.DataFormat[dataFormat.toUpperCase()]
+          : dataFormat;
+        const asset = storage.createAsset(
           assetType,
-          runtime.storage.DataFormat[dataFormat.toUpperCase()] || dataFormat,
+          format,
           null,
           new Uint8Array(buffer),
-          runtime.storage.AssetType
+          {dataFormat: format}
         );
 
-        const soundName = this.makeUniqueSoundName(target, 'Microphone recording');
-        const sound = {
-          name: soundName,
+        // Decode first so we can capture valid sample rate/count metadata.
+        // The AudioEngine uses the raw bytes; sound is added only after decode
+        // succeeds so a failure doesn't leave a broken entry in the Sounds tab.
+        if (!runtime.audioEngine || typeof runtime.audioEngine.decodeSoundPlayer !== 'function') {
+          throw new Error('The audio engine is unavailable in this TurboWarp version.');
+        }
+        const player = await runtime.audioEngine.decodeSoundPlayer({
+          data: asset.data,
+          format,
           assetId: asset.assetId,
-          dataFormat,
+          md5: asset.assetId + '.' + dataFormat
+        });
+
+        const sound = {
+          name: 'Microphone recording',
+          assetId: asset.assetId,
+          dataFormat: format,
           format: '',
-          rate: 0,
-          sampleCount: 0,
+          rate: player.buffer.sampleRate,
+          sampleCount: player.buffer.length,
           md5: asset.assetId + '.' + dataFormat,
-          asset
+          asset,
+          soundId: player.id
         };
 
-        // Add through the target's public-ish list interface. Runtime versions
-        // expose either sprite.createSound or target.addSound for this task.
-        if (typeof target.sprite.createSound === 'function') {
-          target.sprite.createSound(sound);
-        } else if (typeof target.addSound === 'function') {
-          target.addSound(sound, target.sprite.sounds.length);
-        } else {
+        // RenderedTarget.addSound maintains the sprite sound list and handles
+        // unique naming. Its sprite shares this list across clones.
+        if (typeof target.addSound !== 'function') {
+          if (player && typeof player.dispose === 'function') player.dispose();
           throw new Error('This TurboWarp version cannot add a sound to the selected sprite.');
         }
-
-        if (runtime.audioEngine && typeof runtime.audioEngine.decodeSoundPlayer === 'function') {
-          const player = await runtime.audioEngine.decodeSoundPlayer(Object.assign({}, sound, {data: asset.data}));
-          sound.soundId = player.id;
-          sound.rate = player.buffer.sampleRate;
-          sound.sampleCount = player.buffer.length;
-          if (target.sprite.soundBank && typeof target.sprite.soundBank.addSoundPlayer === 'function') {
-            target.sprite.soundBank.addSoundPlayer(player);
-          }
+        target.addSound(sound);
+        if (target.sprite.soundBank && typeof target.sprite.soundBank.addSoundPlayer === 'function') {
+          target.sprite.soundBank.addSoundPlayer(player);
         }
       } catch (error) {
         this.showError('Could not save the recording as a sprite sound: ' + this.getErrorMessage(error));
