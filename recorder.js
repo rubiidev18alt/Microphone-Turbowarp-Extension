@@ -99,6 +99,21 @@
             opcode: 'stopPlayback',
             blockType: Scratch.BlockType.COMMAND,
             text: 'stop playback'
+          },
+          {
+            opcode: 'requestMicrophonePermission',
+            blockType: Scratch.BlockType.COMMAND,
+            text: 'request microphone permission'
+          },
+          {
+            opcode: 'isRecording',
+            blockType: Scratch.BlockType.BOOLEAN,
+            text: 'is recording?'
+          },
+          {
+            opcode: 'saveLastRecordingAsSound',
+            blockType: Scratch.BlockType.COMMAND,
+            text: 'save last recording as sound'
           }
         ]
       };
@@ -115,6 +130,165 @@
         MediaRecorder.isTypeSupported(mimeType)
       ) || '';
     }
+
+    /**
+     * Ask for permission only when a user runs the block. Browsers do not
+     * reliably show permission prompts during extension registration.
+     * If permission is granted, stop the short-lived stream so the mic is not
+     * left active; subsequent recording requests the device again as needed.
+     */
+    async requestMicrophonePermission() {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        this.showError('Microphone access is unavailable. Use a supported browser on HTTPS or localhost.');
+        return;
+      }
+
+      let stream;
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        this.permissionGranted = true;
+      } catch (error) {
+        this.permissionGranted = false;
+        this.showError(this.getErrorMessage(error));
+      } finally {
+        if (stream) stream.getTracks().forEach((track) => track.stop());
+      }
+    }
+
+    /**
+     * Boolean reporter. It reflects active capture, not whether permission was
+     * granted previously or whether the last take exists.
+     */
+    isRecording() {
+      return Boolean(this.mediaRecorder && this.mediaRecorder.state === 'recording');
+    }
+
+    /**
+     * Store the latest take in the current sprite's Sounds list.
+     *
+     * This uses TurboWarp's unsandboxed VM APIs. It deliberately rejects the
+     * Stage/backdrop target: Scratch backdrops cannot own sounds.
+     */
+    async saveLastRecordingAsSound(args, util) {
+      if (!this.audioUrl || !this.recordings.length) {
+        this.showError('Record something first, then save it as a sound.');
+        return;
+      }
+
+      const target = util && util.target;
+      if (!target || target.isStage) {
+        this.showError('Select a sprite to save the recording as a sound. The Stage/backdrop cannot own sounds.');
+        return;
+      }
+
+      const runtime = this.runtime;
+      if (!runtime || !runtime.storage || !runtime.storage.AssetType || !target.sprite) {
+        this.showError('This TurboWarp version does not expose the sound storage API needed by this block.');
+        return;
+      }
+
+      try {
+        const response = await fetch(this.audioUrl);
+        if (!response.ok) throw new Error('Could not read the recorded audio.');
+        const buffer = await response.arrayBuffer();
+        const mimeType = this.recordings[this.recordings.length - 1].blob.type || 'audio/webm';
+        // Decode the recorded bytes first, then convert to a broadly supported
+        // PCM WAV asset so the saved project sound is usable outside this session.
+        if (!runtime.audioEngine || typeof runtime.audioEngine.decodeSoundPlayer !== 'function') {
+          throw new Error('The audio engine is unavailable in this TurboWarp version.');
+        }
+        const player = await runtime.audioEngine.decodeSoundPlayer({
+          data: {buffer, type: mimeType}
+        });
+        const storage = runtime.storage;
+        const dataFormat = 'wav';
+        const format = storage.DataFormat && storage.DataFormat.WAV ? storage.DataFormat.WAV : 'wav';
+        const wavBytes = this.audioBufferToWav(player.buffer);
+        const asset = storage.createAsset(
+          storage.AssetType.Sound,
+          format,
+          null,
+          wavBytes,
+          storage.AssetType
+        );
+
+        const wavBuffer = wavBytes.buffer.slice(wavBytes.byteOffset, wavBytes.byteOffset + wavBytes.byteLength);
+        const storedPlayer = await runtime.audioEngine.decodeSoundPlayer({
+          data: {buffer: wavBuffer, type: 'audio/wav'},
+          format: 'wav',
+          assetId: asset.assetId,
+          md5: asset.assetId + '.wav'
+        });
+
+        const sound = {
+          name: 'Microphone recording',
+          assetId: asset.assetId,
+          dataFormat,
+          format: '',
+          rate: storedPlayer.buffer.sampleRate,
+          sampleCount: storedPlayer.buffer.length,
+          md5: asset.assetId + '.' + dataFormat,
+          asset,
+          soundId: storedPlayer.id
+        };
+
+        if (typeof target.addSound !== 'function' ||
+            !target.sprite.soundBank ||
+            typeof target.sprite.soundBank.addSoundPlayer !== 'function') {
+          if (storedPlayer && typeof storedPlayer.dispose === 'function') storedPlayer.dispose();
+          throw new Error('This TurboWarp version cannot add a sound to the selected sprite.');
+        }
+        // Register a player decoded from the exact WAV bytes stored in the asset.
+        target.sprite.soundBank.addSoundPlayer(storedPlayer);
+        target.addSound(sound);
+      } catch (error) {
+        this.showError('Could not save the recording as a sprite sound: ' + this.getErrorMessage(error));
+      }
+    }
+
+
+    /**
+     * Convert a decoded AudioBuffer to PCM WAV. Scratch project sounds use
+     * portable asset formats; simply labeling a WebM blob as a sound asset
+     * would create an invalid sound for some player/editor paths.
+     */
+    audioBufferToWav(audioBuffer) {
+      const channelCount = audioBuffer.numberOfChannels;
+      const sampleRate = audioBuffer.sampleRate;
+      const frameCount = audioBuffer.length;
+      const bytesPerSample = 2;
+      const dataSize = frameCount * channelCount * bytesPerSample;
+      const wav = new ArrayBuffer(44 + dataSize);
+      const view = new DataView(wav);
+      const writeText = (offset, value) => {
+        for (let i = 0; i < value.length; i++) view.setUint8(offset + i, value.charCodeAt(i));
+      };
+
+      writeText(0, 'RIFF');
+      view.setUint32(4, 36 + dataSize, true);
+      writeText(8, 'WAVE');
+      writeText(12, 'fmt ');
+      view.setUint32(16, 16, true);
+      view.setUint16(20, 1, true);
+      view.setUint16(22, channelCount, true);
+      view.setUint32(24, sampleRate, true);
+      view.setUint32(28, sampleRate * channelCount * bytesPerSample, true);
+      view.setUint16(32, channelCount * bytesPerSample, true);
+      view.setUint16(34, 16, true);
+      writeText(36, 'data');
+      view.setUint32(40, dataSize, true);
+
+      let offset = 44;
+      for (let frame = 0; frame < frameCount; frame++) {
+        for (let channel = 0; channel < channelCount; channel++) {
+          const sample = Math.max(-1, Math.min(1, audioBuffer.getChannelData(channel)[frame]));
+          view.setInt16(offset, sample < 0 ? sample * 0x8000 : sample * 0x7fff, true);
+          offset += bytesPerSample;
+        }
+      }
+      return new Uint8Array(wav);
+    }
+
 
     async startRecording() {
       // Prevent duplicate prompts or recorder instances, including while the

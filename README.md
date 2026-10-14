@@ -21,7 +21,7 @@ still appears when `recorder.js` is loaded from a direct URL.
 ## Use
 
 Load `recorder.js` as an unsandboxed TurboWarp extension. The extension requests
-microphone permission when **start microphone recording** is run. Browser
+microphone permission when **start microphone recording** or **request microphone permission** is run. Browsers generally require a user action, so the prompt cannot reliably be triggered just by adding the extension. Browser
 permission prompts and audio recording support depend on the browser and the
 page's security context (HTTPS or localhost is generally required).
 
@@ -47,6 +47,9 @@ The main class is split into small methods so it is easier to modify:
 - `startRecording()` / `stopRecording()` — microphone lifecycle.
 - `saveFinishedRecording()` — finalizes audio and releases the microphone.
 - `playLastRecording()` / `stopPlayback()` — playback controls.
+- `requestMicrophonePermission()` — explicit permission request from a user-run block.
+- `isRecording()` — Boolean reporter for active microphone capture.
+- `saveLastRecordingAsSound()` — converts the last take to WAV and adds it to the current sprite's Sounds list.
 - `addStageOverlay()` / `removeStageOverlay()` — recording indicator UI.
 - `showError()` / `getErrorMessage()` — user-facing error reporting.
 
@@ -59,6 +62,8 @@ The main class is split into small methods so it is easier to modify:
    `URL.revokeObjectURL()` to avoid retaining browser resources.
 5. Do not describe the overlay meter as a hard recording limit unless you add
    and test actual stop-after-duration logic.
+6. Saving audio requires the extension to run unsandboxed in TurboWarp. Sounds
+   belong to sprites; the Stage/backdrop cannot own sounds.
 
 ## License
 
