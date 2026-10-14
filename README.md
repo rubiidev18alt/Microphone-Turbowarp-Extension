@@ -1,8 +1,6 @@
 # Microphone Recorder for TurboWarp
 
-Record audio from your microphone, then play back your latest take. A small,
-Scratch-inspired extension with a bright microphone icon and simple recording
-blocks.
+Record audio from your microphone, watch a live waveform, and play back your latest take. The extension uses a polished purple recording panel and Scratch-inspired blocks.
 
 ![Microphone Recorder extension banner](assets/extension-banner.svg)
 
@@ -15,7 +13,7 @@ blocks.
 ## Visual assets
 
 The `assets/` folder contains the banner, palette/block icon exports, and
-editable SVG sources. The extension embeds its own icon as a data URI so it
+editable SVG sources. The extension embeds its matching purple waveform icon as a data URI so it
 still appears when `recorder.js` is loaded from a direct URL.
 
 ## Use
@@ -36,8 +34,7 @@ Most common changes are grouped near the top of `recorder.js` in the
 | `extensionDescription` | Short user-facing description for documentation and listings |
 | `blockIconURI`, `menuIconURI` | Icon drawn on blocks and in the category palette |
 | `extensionColor`, `extensionColorDark`, `extensionColorDarker` | Block colors |
-| `overlayTop`, `overlayZIndex`, `overlayBackground` | Recording indicator position and appearance |
-| `overlayMeterSeconds` | Seconds represented by the visual meter; **not** a recording limit |
+| `overlayTop`, `overlayZIndex`, `overlayBackground`, `overlayBorder`, `overlayGlow` | Recording panel position and appearance |
 | `preferredMimeTypes` | Order of audio formats to try when the browser supports them |
 
 The main class is split into small methods so it is easier to modify:
@@ -50,7 +47,8 @@ The main class is split into small methods so it is easier to modify:
 - `requestMicrophonePermission()` — explicit permission request from a user-run block.
 - `isRecording()` — Boolean reporter for active microphone capture.
 - `saveLastRecordingAsSound()` — converts the last take to WAV and adds it to the current sprite's Sounds list.
-- `addStageOverlay()` / `removeStageOverlay()` — recording indicator UI.
+- `addStageOverlay()` / `removeStageOverlay()` — recording panel lifecycle.
+- `startWaveform()` — draws a live microphone waveform using the Web Audio analyser when available.
 - `showError()` / `getErrorMessage()` — user-facing error reporting.
 
 ### Guidelines for contributors and AI coding tools
@@ -62,7 +60,9 @@ The main class is split into small methods so it is easier to modify:
    `URL.revokeObjectURL()` to avoid retaining browser resources.
 5. Do not describe the overlay meter as a hard recording limit unless you add
    and test actual stop-after-duration logic.
-6. Saving audio requires the extension to run unsandboxed in TurboWarp. Sounds
+6. The waveform is visual feedback and does not cap recording duration. Long
+   recordings can still use substantial memory and browser resources.
+7. Saving audio requires the extension to run unsandboxed in TurboWarp. Sounds
    belong to sprites; the Stage/backdrop cannot own sounds.
 
 ## License

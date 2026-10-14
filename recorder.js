@@ -23,20 +23,20 @@
     extensionDescription: 'Record audio from your microphone and play back your latest take in TurboWarp.',
     // Inline SVG data URIs keep the icon portable when the extension is loaded
     // directly from a URL. PNG previews and editable SVG sources live in /assets.
-    blockIconURI: "data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22128%22 height=%22128%22 viewBox=%220 0 128 128%22%3E%3Crect x=%223%22 y=%223%22 width=%22122%22 height=%22122%22 rx=%2228%22 fill=%22%234BBEFF%22/%3E%3Cg fill=%22none%22 stroke=%22%23E0F6FF%22 stroke-width=%224%22 stroke-linecap=%22round%22%3E%3Cpath d=%22M28 48 Q14 64 28 80%22/%3E%3Cpath d=%22M100 48 Q114 64 100 80%22/%3E%3Cpath d=%22M38 39 Q18 64 38 89%22/%3E%3Cpath d=%22M90 39 Q110 64 90 89%22/%3E%3C/g%3E%3Cg fill=%22%23FFFFFF%22%3E%3Crect x=%2252%22 y=%2224%22 width=%2224%22 height=%2254%22 rx=%2212%22/%3E%3Ccircle cx=%2264%22 cy=%2239%22 r=%223%22 fill=%22%232990EB%22/%3E%3Ccircle cx=%2264%22 cy=%2250%22 r=%223%22 fill=%22%232990EB%22/%3E%3Ccircle cx=%2264%22 cy=%2261%22 r=%223%22 fill=%22%232990EB%22/%3E%3Cpath d=%22M44 51 V60 A20 20 0 0 0 84 60 V51%22 fill=%22none%22 stroke=%22%23FFFFFF%22 stroke-width=%225%22 stroke-linecap=%22round%22/%3E%3Cpath d=%22M64 80 V95 M51 96 H77%22 stroke=%22%23FFFFFF%22 stroke-width=%225%22 stroke-linecap=%22round%22/%3E%3C/g%3E%3C/svg%3E",
-    menuIconURI: "data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22128%22 height=%22128%22 viewBox=%220 0 128 128%22%3E%3Crect x=%223%22 y=%223%22 width=%22122%22 height=%22122%22 rx=%2228%22 fill=%22%234BBEFF%22/%3E%3Cg fill=%22none%22 stroke=%22%23E0F6FF%22 stroke-width=%224%22 stroke-linecap=%22round%22%3E%3Cpath d=%22M28 48 Q14 64 28 80%22/%3E%3Cpath d=%22M100 48 Q114 64 100 80%22/%3E%3Cpath d=%22M38 39 Q18 64 38 89%22/%3E%3Cpath d=%22M90 39 Q110 64 90 89%22/%3E%3C/g%3E%3Cg fill=%22%23FFFFFF%22%3E%3Crect x=%2252%22 y=%2224%22 width=%2224%22 height=%2254%22 rx=%2212%22/%3E%3Ccircle cx=%2264%22 cy=%2239%22 r=%223%22 fill=%22%232990EB%22/%3E%3Ccircle cx=%2264%22 cy=%2250%22 r=%223%22 fill=%22%232990EB%22/%3E%3Ccircle cx=%2264%22 cy=%2261%22 r=%223%22 fill=%22%232990EB%22/%3E%3Cpath d=%22M44 51 V60 A20 20 0 0 0 84 60 V51%22 fill=%22none%22 stroke=%22%23FFFFFF%22 stroke-width=%225%22 stroke-linecap=%22round%22/%3E%3Cpath d=%22M64 80 V95 M51 96 H77%22 stroke=%22%23FFFFFF%22 stroke-width=%225%22 stroke-linecap=%22round%22/%3E%3C/g%3E%3C/svg%3E",
-    extensionColor: '#ff0000',
-    extensionColorDark: '#D10000',
-    extensionColorDarker: '#A30000',
+    blockIconURI: "data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22128%22 height=%22128%22 viewBox=%220 0 128 128%22%3E%3Cdefs%3E%3ClinearGradient id=%22b%22 x1=%220%22 y1=%220%22 x2=%221%22 y2=%221%22%3E%3Cstop stop-color=%22%239577FF%22/%3E%3Cstop offset=%221%22 stop-color=%22%236242CC%22/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect x=%223%22 y=%223%22 width=%22122%22 height=%22122%22 rx=%2228%22 fill=%22url(%23b)%22/%3E%3Cg stroke=%22%23FFFFFF%22 stroke-width=%225%22 stroke-linecap=%22round%22%3E%3Cpath d=%22M24 64V59 M36 64V40 M48 64V28 M60 64V48 M72 64V22 M84 64V44 M96 64V34 M108 64V54%22/%3E%3Cpath d=%22M24 64V69 M36 64V88 M48 64V100 M60 64V80 M72 64V106 M84 64V84 M96 64V94 M108 64V74%22/%3E%3C/g%3E%3C/svg%3E",
+    menuIconURI: "data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22128%22 height=%22128%22 viewBox=%220 0 128 128%22%3E%3Cdefs%3E%3ClinearGradient id=%22b%22 x1=%220%22 y1=%220%22 x2=%221%22 y2=%221%22%3E%3Cstop stop-color=%22%239577FF%22/%3E%3Cstop offset=%221%22 stop-color=%22%236242CC%22/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect x=%223%22 y=%223%22 width=%22122%22 height=%22122%22 rx=%2228%22 fill=%22url(%23b)%22/%3E%3Cg stroke=%22%23FFFFFF%22 stroke-width=%225%22 stroke-linecap=%22round%22%3E%3Cpath d=%22M24 64V59 M36 64V40 M48 64V28 M60 64V48 M72 64V22 M84 64V44 M96 64V34 M108 64V54%22/%3E%3Cpath d=%22M24 64V69 M36 64V88 M48 64V100 M60 64V80 M72 64V106 M84 64V84 M96 64V94 M108 64V74%22/%3E%3C/g%3E%3C/svg%3E",
+    extensionColor: '#7656E8',
+    extensionColorDark: '#6242CC',
+    extensionColorDarker: '#4A2BA8',
 
-    // A recording duration limit is not enforced. This only controls the
-    // visual scale of the overlay meter; set to 0 to disable the meter.
-    overlayMeterSeconds: 60,
-    overlayTop: '40px',
+    // The recording indicator is a live waveform, not a progress meter, so
+    // the recording length is not capped at 60 seconds.
+    overlayTop: '24px',
     overlayZIndex: '9999',
-    overlayBackground: 'rgba(255, 0, 0, 0.85)',
-    overlayMeterBackground: '#a30000',
-    overlayMeterForeground: '#ff0000',
+    overlayBackground: 'linear-gradient(135deg, rgba(31, 28, 65, 0.97), rgba(47, 35, 93, 0.96))',
+    overlayAccent: '#B9A5FF',
+    overlayBorder: 'rgba(190, 169, 255, 0.35)',
+    overlayGlow: 'rgba(130, 100, 255, 0.25)',
 
     // Prefer browser-supported formats instead of assuming WebM is available.
     preferredMimeTypes: [
@@ -58,6 +58,11 @@
       this.stageOverlay = null;
       this.overlayLabel = null;
       this.overlayMeterFill = null;
+      this.waveformCanvas = null;
+      this.waveformAnimationFrame = null;
+      this.waveformAnalyser = null;
+      this.waveformSource = null;
+      this.waveformAudioContext = null;
       this.startTime = null;
       this.timerInterval = null;
 
@@ -432,73 +437,230 @@
     addStageOverlay() {
       if (this.stageOverlay) return;
 
+      // Floating recording card: compact, readable, and visually distinct from
+      // Scratch's stage while keeping all drawing local to this extension.
       const overlay = document.createElement('div');
       overlay.setAttribute('role', 'status');
       overlay.setAttribute('aria-live', 'polite');
       Object.assign(overlay.style, {
-        position: 'absolute',
+        position: 'fixed',
         top: CONFIG.overlayTop,
         left: '50%',
         transform: 'translateX(-50%)',
-        padding: '10px 20px',
+        width: 'min(360px, calc(100vw - 32px))',
+        boxSizing: 'border-box',
+        padding: '14px 16px 12px',
         background: CONFIG.overlayBackground,
         color: '#fff',
-        fontFamily: 'Arial, sans-serif',
-        fontSize: '18px',
-        fontWeight: 'bold',
-        borderRadius: '8px',
-        textAlign: 'center',
-        zIndex: CONFIG.overlayZIndex
-      });
-
-      // DOM methods avoid HTML injection and make UI elements easy to target.
-      const label = document.createElement('div');
-      label.className = 'mic-recorder-status';
-      label.textContent = 'Recording: 0s';
-
-      const meterTrack = document.createElement('div');
-      meterTrack.className = 'mic-recorder-meter-track';
-      Object.assign(meterTrack.style, {
-        marginTop: '5px',
-        width: '200px',
-        height: '10px',
-        background: CONFIG.overlayMeterBackground,
-        borderRadius: '5px',
+        fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+        border: '1px solid ' + CONFIG.overlayBorder,
+        borderRadius: '16px',
+        boxShadow: '0 12px 38px rgba(12, 7, 35, 0.32), 0 0 28px ' + CONFIG.overlayGlow,
+        backdropFilter: 'blur(18px)',
+        WebkitBackdropFilter: 'blur(18px)',
+        zIndex: CONFIG.overlayZIndex,
         overflow: 'hidden'
       });
 
-      const meterFill = document.createElement('div');
-      meterFill.className = 'mic-recorder-meter-fill';
-      Object.assign(meterFill.style, {
-        height: '100%',
-        width: '0%',
-        background: CONFIG.overlayMeterForeground,
-        borderRadius: '5px'
+      const header = document.createElement('div');
+      Object.assign(header.style, {
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: '12px',
+        marginBottom: '10px'
       });
 
-      meterTrack.appendChild(meterFill);
-      overlay.append(label, meterTrack);
+      const titleGroup = document.createElement('div');
+      Object.assign(titleGroup.style, {
+        display: 'flex',
+        alignItems: 'center',
+        gap: '9px',
+        minWidth: '0'
+      });
+
+      const liveDot = document.createElement('span');
+      Object.assign(liveDot.style, {
+        display: 'inline-block',
+        width: '9px',
+        height: '9px',
+        flex: '0 0 9px',
+        borderRadius: '50%',
+        background: '#FF668B',
+        boxShadow: '0 0 0 4px rgba(255, 102, 139, 0.15), 0 0 12px rgba(255, 102, 139, 0.7)'
+      });
+
+      const title = document.createElement('div');
+      title.textContent = 'MICROPHONE STUDIO';
+      Object.assign(title.style, {
+        fontSize: '11px',
+        fontWeight: '800',
+        letterSpacing: '1.25px',
+        color: '#DED5FF'
+      });
+
+      const badge = document.createElement('span');
+      badge.textContent = 'LIVE';
+      Object.assign(badge.style, {
+        flex: '0 0 auto',
+        padding: '4px 7px',
+        borderRadius: '6px',
+        background: 'rgba(255, 102, 139, 0.16)',
+        border: '1px solid rgba(255, 126, 160, 0.32)',
+        color: '#FFB6CB',
+        fontSize: '9px',
+        fontWeight: '800',
+        letterSpacing: '1px'
+      });
+
+      titleGroup.append(liveDot, title);
+      header.append(titleGroup, badge);
+
+      const waveformCanvas = document.createElement('canvas');
+      waveformCanvas.width = 640;
+      waveformCanvas.height = 112;
+      waveformCanvas.setAttribute('aria-label', 'Live microphone waveform');
+      Object.assign(waveformCanvas.style, {
+        display: 'block',
+        width: '100%',
+        height: '56px',
+        borderRadius: '10px',
+        background: 'linear-gradient(180deg, rgba(18, 14, 44, 0.72), rgba(35, 26, 70, 0.72))',
+        border: '1px solid rgba(196, 178, 255, 0.12)',
+        boxSizing: 'border-box'
+      });
+
+      const footer = document.createElement('div');
+      Object.assign(footer.style, {
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: '12px',
+        marginTop: '11px'
+      });
+
+      const status = document.createElement('div');
+      status.textContent = 'Recording in progress';
+      Object.assign(status.style, {
+        minWidth: '0',
+        color: '#C7BDF0',
+        fontSize: '12px',
+        fontWeight: '600'
+      });
+
+      const elapsed = document.createElement('div');
+      elapsed.textContent = '00:00';
+      Object.assign(elapsed.style, {
+        color: '#FFFFFF',
+        fontSize: '20px',
+        lineHeight: '1.1',
+        fontWeight: '750',
+        fontVariantNumeric: 'tabular-nums',
+        letterSpacing: '0.3px'
+      });
+
+      footer.append(status, elapsed);
+      overlay.append(header, waveformCanvas, footer);
       document.body.appendChild(overlay);
 
       this.stageOverlay = overlay;
-      this.overlayLabel = label;
-      this.overlayMeterFill = meterFill;
+      this.overlayLabel = elapsed;
+      this.overlayMeterFill = null;
+      this.waveformCanvas = waveformCanvas;
+      this.startWaveform();
 
       this.timerInterval = setInterval(() => {
-        // A stop event may have removed the overlay between interval ticks.
-        if (!this.overlayLabel || !this.overlayMeterFill || !this.startTime) return;
-
-        const elapsedSeconds = Math.floor((Date.now() - this.startTime) / 1000);
-        this.overlayLabel.textContent = `Recording: ${elapsedSeconds}s`;
-
-        const scaleSeconds = Number(CONFIG.overlayMeterSeconds);
-        if (scaleSeconds > 0) {
-          const progress = Math.min((elapsedSeconds / scaleSeconds) * 100, 100);
-          this.overlayMeterFill.style.width = `${progress}%`;
-        } else {
-          this.overlayMeterFill.style.width = '0%';
-        }
+        if (!this.overlayLabel || !this.startTime) return;
+        const elapsedSeconds = Math.max(0, Math.floor((Date.now() - this.startTime) / 1000));
+        const minutes = Math.floor(elapsedSeconds / 60);
+        const seconds = elapsedSeconds % 60;
+        this.overlayLabel.textContent =
+          String(minutes).padStart(2, '0') + ':' + String(seconds).padStart(2, '0');
       }, 250);
+    }
+
+    startWaveform() {
+      const canvas = this.waveformCanvas;
+      if (!canvas) return;
+
+      const context = canvas.getContext('2d');
+      if (!context) return;
+
+      // Feed actual microphone samples into an analyser when Web Audio is
+      // available; the fallback still draws a subtle idle waveform.
+      try {
+        const stream = this.mediaRecorder && this.mediaRecorder.stream;
+        const AudioContextConstructor = window.AudioContext || window.webkitAudioContext;
+        if (stream && AudioContextConstructor) {
+          const audioContext = new AudioContextConstructor();
+          const analyser = audioContext.createAnalyser();
+          analyser.fftSize = 1024;
+          analyser.smoothingTimeConstant = 0.78;
+          const source = audioContext.createMediaStreamSource(stream);
+          source.connect(analyser);
+          this.waveformAudioContext = audioContext;
+          this.waveformAnalyser = analyser;
+          this.waveformSource = source;
+        }
+      } catch (error) {
+        // Waveform is a visual enhancement; recording should continue if the
+        // browser refuses a second Web Audio connection.
+        console.warn('Microphone Recorder: waveform unavailable', error);
+      }
+
+      const samples = this.waveformAnalyser ? new Uint8Array(this.waveformAnalyser.fftSize) : null;
+      const draw = () => {
+        if (!this.waveformCanvas || !this.waveformCanvas.isConnected) return;
+        const width = canvas.width;
+        const height = canvas.height;
+        context.clearRect(0, 0, width, height);
+
+        // Fine center guide, like a small audio-editor timeline.
+        context.strokeStyle = 'rgba(207, 195, 255, 0.15)';
+        context.lineWidth = 1;
+        context.beginPath();
+        context.moveTo(0, height / 2);
+        context.lineTo(width, height / 2);
+        context.stroke();
+
+        if (this.waveformAnalyser && samples) {
+          this.waveformAnalyser.getByteTimeDomainData(samples);
+        }
+
+        const mid = height / 2;
+        const amplitude = this.waveformAnalyser ? 1 : 0.07;
+        const points = this.waveformAnalyser ? samples.length : 128;
+        const step = width / points;
+        context.beginPath();
+        for (let i = 0; i < points; i++) {
+          let value;
+          if (this.waveformAnalyser) {
+            value = (samples[i] - 128) / 128;
+          } else {
+            value = Math.sin((i * 0.24) + (Date.now() / 220)) * 0.16;
+          }
+          const x = i * step;
+          const y = mid + value * mid * amplitude;
+          if (i === 0) context.moveTo(x, y);
+          else context.lineTo(x, y);
+        }
+        context.lineWidth = 3;
+        context.lineCap = 'round';
+        context.lineJoin = 'round';
+        const gradient = context.createLinearGradient(0, 0, width, 0);
+        gradient.addColorStop(0, '#6BE4FF');
+        gradient.addColorStop(0.52, '#B9A5FF');
+        gradient.addColorStop(1, '#F2A6FF');
+        context.strokeStyle = gradient;
+        context.shadowColor = 'rgba(174, 140, 255, 0.42)';
+        context.shadowBlur = 9;
+        context.stroke();
+        context.shadowBlur = 0;
+
+        this.waveformAnimationFrame = requestAnimationFrame(draw);
+      };
+
+      this.waveformAnimationFrame = requestAnimationFrame(draw);
     }
 
     removeStageOverlay() {
@@ -511,6 +673,17 @@
       this.stageOverlay = null;
       this.overlayLabel = null;
       this.overlayMeterFill = null;
+      this.waveformCanvas = null;
+      if (this.waveformAnimationFrame !== null) {
+        cancelAnimationFrame(this.waveformAnimationFrame);
+      }
+      this.waveformAnimationFrame = null;
+      this.waveformAnalyser = null;
+      this.waveformSource = null;
+      if (this.waveformAudioContext) {
+        this.waveformAudioContext.close().catch(() => {});
+      }
+      this.waveformAudioContext = null;
       this.timerInterval = null;
       this.startTime = null;
     }
